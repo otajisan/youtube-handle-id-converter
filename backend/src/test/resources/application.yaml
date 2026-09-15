@@ -1,3 +1,0 @@
-# テスト用。実 API Key は使わない(MockRestServiceServer で YouTube API をモックする)
-youtube:
-  api-key: test-api-key

@@ -38,14 +38,9 @@ class YouTubeDataApiClient(
             call {
                 restClient
                     .get()
-                    .uri {
-                        it
-                            .path(
-                                "/channels",
-                            ).queryParam("part", "id,snippet")
-                            .queryParam("forHandle", normalized)
-                            .build()
-                    }.retrieve()
+                    // 値はテンプレート変数として渡し、{ } 等を厳密にエンコードさせる(テンプレートとして解釈させない)
+                    .uri("/channels?part=id,snippet&forHandle={handle}", normalized)
+                    .retrieve()
                     .body(ChannelListResponse::class.java)
             }
         return response?.items?.firstOrNull()?.toChannel() ?: throw YouTubeApiException.NotFound("@$normalized")
@@ -62,14 +57,8 @@ class YouTubeDataApiClient(
             call {
                 restClient
                     .get()
-                    .uri {
-                        it
-                            .path(
-                                "/channels",
-                            ).queryParam("part", "id,snippet")
-                            .queryParam("id", ids.joinToString(","))
-                            .build()
-                    }.retrieve()
+                    .uri("/channels?part=id,snippet&id={ids}", ids.joinToString(","))
+                    .retrieve()
                     .body(ChannelListResponse::class.java)
             }
         return response?.items?.map { it.toChannel() } ?: emptyList()

@@ -2,7 +2,7 @@ spring:
   application:
     name: youtube-handle-id-converter
   http:
-    client:
+    clients:
       # 自動構成の RestClient.Builder に適用される(YouTube Data API 呼び出し)
       connect-timeout: 3s
       read-timeout: 5s

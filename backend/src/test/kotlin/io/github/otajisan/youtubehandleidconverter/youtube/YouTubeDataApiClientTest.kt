@@ -20,7 +20,8 @@ import org.springframework.test.web.client.response.MockRestResponseCreators.wit
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 import java.net.SocketTimeoutException
 
-@RestClientTest(YouTubeDataApiClient::class)
+// 実 API Key は使わない(MockRestServiceServer で YouTube API をモックする)
+@RestClientTest(YouTubeDataApiClient::class, properties = ["youtube.api-key=test-api-key"])
 @Import(YouTubeConfiguration::class)
 class YouTubeDataApiClientTest {
     @Autowired
@@ -70,6 +71,15 @@ class YouTubeDataApiClientTest {
     }
 
     @Test
+    fun `URI テンプレート文字を含む入力はエスケープされて送られる`() {
+        server
+            .expect(requestTo(containsString("forHandle=%7Babc%7D")))
+            .andRespond(withSuccess("""{"items":[]}""", MediaType.APPLICATION_JSON))
+
+        assertThatThrownBy { client.byHandle("@{abc}") }.isInstanceOf(YouTubeApiException.NotFound::class.java)
+    }
+
+    @Test
     fun `存在しないハンドルは NotFound(items が空)`() {
         server
             .expect(
@@ -84,7 +94,8 @@ class YouTubeDataApiClientTest {
     @Test
     fun `Channel ID の一覧をまとめて引ける(存在しない ID は結果に含まれない)`() {
         server
-            .expect(queryParam("id", "UCaaaaaaaaaaaaaaaaaaaaaa,UCbbbbbbbbbbbbbbbbbbbbbb,UCmissingmissingmissingm"))
+            // 値はテンプレート変数として厳密にエンコードされるため、区切りのカンマは %2C になる(API 側で通常どおりデコードされる)
+            .expect(queryParam("id", "UCaaaaaaaaaaaaaaaaaaaaaa%2CUCbbbbbbbbbbbbbbbbbbbbbb%2CUCmissingmissingmissingm"))
             .andRespond(
                 withSuccess(
                     channelList(

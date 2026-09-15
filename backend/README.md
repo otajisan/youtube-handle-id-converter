@@ -67,7 +67,7 @@ docker compose up --build     # http://localhost:8180(Actuator の 8181 はホ�
 
 - 403 + `reason=quotaExceeded` → `QuotaExceeded`、それ以外の HTTP エラー / 通信エラー → `Upstream`(メッセージに URL や鍵を含めない)
 - `snippet.customUrl` が無いチャンネルは `handle = null`
-- タイムアウトは `spring.http.client.connect-timeout` / `read-timeout`(3s / 5s)
+- タイムアウトは `spring.http.clients.connect-timeout` / `read-timeout`(3s / 5s)
 - テストは `@RestClientTest` + `MockRestServiceServer`(実 API Key は使わない)
 
 ## 設定
