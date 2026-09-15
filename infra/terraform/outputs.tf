@@ -17,3 +17,8 @@ output "deploy_service_account" {
   description = "CD(GitHub Actions)用 SA。GCP_DEPLOY_SA_EMAIL に登録する"
   value       = google_service_account.deploy.email
 }
+
+output "backend_url" {
+  description = "Cloud Run サービスの URL。フロントの NEXT_PUBLIC_API_BASE_URL に設定する"
+  value       = google_cloud_run_v2_service.backend.uri
+}

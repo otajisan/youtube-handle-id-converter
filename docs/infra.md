@@ -72,7 +72,7 @@ terraform plan
 | `artifact_registry.tf` | Docker リポジトリ `backend`(直近 10 バージョン保持、30 日超は削除) |
 | `secrets.tf` | Secret の器 `YOUTUBE_API_KEY` / `APP_AUTH_USERNAME` / `APP_AUTH_PASSWORD`。実行 SA にのみ `secretAccessor` |
 | `iam.tf` | 実行 SA `backend-runtime`、CD 用 SA `github-deploy`(AR writer + 実行 SA の `serviceAccountUser`、WIF は `main` のみ) |
-| `cloud_run.tf` | Cloud Run サービス(#8 の 2 段階目で追加) |
+| `cloud_run.tf` | Cloud Run サービス `backend`(min 0 / max 2、512Mi、probe は 8181)、`allUsers` invoker、CD 用 SA の `run.developer` |
 
 ### Secret の値の投入(Terraform 管理外)
 
@@ -81,6 +81,26 @@ printf '%s' 'THE_API_KEY' | gcloud secrets versions add YOUTUBE_API_KEY --projec
 ```
 
 Cloud Run は `latest` バージョンを参照するため、サービス作成前に各 Secret に少なくとも 1 つのバージョンが必要(未設定の項目はダミー値でよい)。
+
+### Cloud Run の運用フラグ
+
+`infra/terraform/variables.tf` の変数を変更して PR → apply で反映する(plan コメントで差分を確認できる)。緊急時は `gcloud run services update backend --region=asia-northeast1 --update-env-vars=APP_MAINTENANCE_MODE=true` で即時反映し、後から Terraform 側を追従させる。
+
+| 変数 | 環境変数 | 用途 |
+|---|---|---|
+| `maintenance_mode` | `APP_MAINTENANCE_MODE` | `/api/**` を 503 にする緊急停止 |
+| `auth_enabled` | `APP_AUTH_ENABLED` | Basic 認証の要求(資格情報は Secret) |
+| `max_inputs` | `APP_MAX_INPUTS` | 1 リクエストの変換件数上限 |
+| `cors_allowed_origins` | `APP_CORS_ALLOWED_ORIGINS` | 許可オリジン |
+
+### 初期イメージ(1 回限りのシード)
+
+Cloud Run サービスの作成にはイメージが必要なため、初回のみ手動で push した(`backend:initial`)。以後は CD(#9)が SHA タグで push し image を更新する。Terraform は `image` を `ignore_changes` にしている。
+
+```sh
+gcloud auth configure-docker asia-northeast1-docker.pkg.dev
+cd backend && docker buildx build --platform linux/amd64 -t asia-northeast1-docker.pkg.dev/yt-handle-id-converter/backend/backend:initial --push .
+```
 
 ## GitHub Repository variables
 
