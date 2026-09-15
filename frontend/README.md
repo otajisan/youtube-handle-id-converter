@@ -26,7 +26,12 @@ npm run dev                  # http://localhost:3000/youtube-handle-id-converter
 | `npm run typecheck`                  | `tsc --noEmit`                                                                                  |
 | `npm test` / `npm run test:coverage` | Vitest(`src/**/*.test.{ts,tsx}`)                                                                |
 | `npm run build`                      | `out/` に静的エクスポート                                                                       |
+| `npm run lock:linux`                 | Linux コンテナで `package-lock.json` を再生成(下記参照)                                         |
 | `npm run preview`                    | `out/` を basePath 配下(`http://localhost:3000/youtube-handle-id-converter/`)で静的配信して確認 |
+
+### 依存関係を変更したとき
+
+macOS で `npm install` すると Linux 向けの optional 依存(`@emnapi/*` 等)が `package-lock.json` から落ち、CI(Linux)の `npm ci` が失敗する([npm/cli#4828](https://github.com/npm/cli/issues/4828))。依存を追加・更新したら **`npm run lock:linux`** で lockfile を作り直してからコミットする。Dependabot の PR は Linux で生成されるため影響しない。
 
 ## CI / デプロイ
 
