@@ -3,6 +3,8 @@
 # - PR では常に起動し、backend/** に変更が無ければジョブを `if:` でスキップする。
 #   ワークフロー自体を paths: で絞ると required check が pending のまま残りマージできなくなるため。
 # - Actions は SHA で固定し、Dependabot(github-actions)が更新する。
+# - fork からの PR では GITHUB_TOKEN が read-only のため、書き込みを伴う
+#   ステップ(PR コメント、依存グラフ送信)はスキップする。
 name: backend
 
 on:
@@ -26,6 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
+      # 同一リポジトリからの PR / push なら true。fork PR では書き込み系ステップを抑止する
+      writable: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: filter
@@ -67,7 +71,7 @@ jobs:
         run: ./gradlew test jacocoTestReport jacocoTestCoverageVerification --no-daemon
 
       - name: Jacoco summary comment
-        if: github.event_name == 'pull_request' && (success() || failure())
+        if: github.event_name == 'pull_request' && needs.changes.outputs.writable == 'true' && (success() || failure())
         uses: madrapps/jacoco-report@e51ce1f46f7f8b5331593f935e59cbaf44b84920 # v1.8.0
         with:
           paths: backend/build/reports/jacoco/test/jacocoTestReport.xml
@@ -90,7 +94,7 @@ jobs:
   dependency-review:
     name: backend-dependency-review
     needs: changes
-    if: needs.changes.outputs.backend == 'true'
+    if: needs.changes.outputs.backend == 'true' && needs.changes.outputs.writable == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write # 依存グラフの送信(Dependency submission API)
