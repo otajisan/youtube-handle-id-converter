@@ -1,5 +1,7 @@
-# infra(Terraform)の CI。#6 では WIF 認証 + init + plan の疎通確認のみ。
-# fmt / validate / tflint / trivy / PR コメント / apply は #7 で追加する。
+# infra(Terraform)の CI/CD。
+#   - infra-lint  : fmt / validate / tflint / trivy config(GCP 認証不要、fork PR でも動く)
+#   - infra-plan  : PR で plan を実行し、結果を PR コメントに投稿(読み取り専用 SA)
+#   - infra-apply : main への push で apply(apply 用 SA、Environment production)
 #
 # - backend-ci と同様、PR では常に起動し infra/** に変更が無ければスキップする
 # - fork PR では id-token が取れないため WIF 認証を伴うジョブはスキップする
@@ -14,10 +16,14 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }} # apply は途中で止めない
 
 permissions:
   contents: read
+
+env:
+  TF_VERSION: "1.16.2"
+  TF_DIR: infra/terraform
 
 jobs:
   changes:
@@ -36,21 +42,66 @@ jobs:
               - "infra/**"
               - ".github/workflows/infra-ci.yml"
 
+  lint:
+    name: infra-lint
+    needs: changes
+    if: needs.changes.outputs.infra == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.TF_DIR }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: terraform fmt
+        run: terraform fmt -check -diff -recursive
+
+      # backend に接続せず構文と provider スキーマだけを検証する
+      - name: terraform validate
+        run: |
+          terraform init -input=false -backend=false
+          terraform validate
+
+      - uses: terraform-linters/setup-tflint@1cf010d3c7aef302051ccdb68c14c5dc2efa34ef # v6.3.1
+        with:
+          tflint_version: v0.64.0
+
+      - name: tflint
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # ruleset プラグイン取得のレート制限回避
+        run: |
+          tflint --init
+          tflint --format compact
+
+      # IaC の設定ミス(公開バケット、過剰な IAM 等)を検出。HIGH 以上で失敗
+      - name: trivy config
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: ${{ env.TF_DIR }}
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+
   plan:
     name: infra-plan
-    needs: changes
-    if: needs.changes.outputs.infra == 'true' && needs.changes.outputs.writable == 'true'
+    needs: [changes, lint]
+    if: github.event_name == 'pull_request' && needs.changes.outputs.infra == 'true' && needs.changes.outputs.writable == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write # WIF で GCP の OIDC トークン交換を行う
+      pull-requests: write # plan 結果をコメントする
     defaults:
       run:
-        working-directory: infra/terraform
+        working-directory: ${{ env.TF_DIR }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Authenticate to GCP (WIF)
+      - name: Authenticate to GCP (WIF, read-only SA)
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
@@ -59,11 +110,97 @@ jobs:
 
       - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
         with:
-          terraform_version: 1.16.2
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
 
       - name: terraform init
         run: terraform init -input=false
 
       # plan 用 SA は state バケットに objectViewer しか持たないためロックを取らない
       - name: terraform plan
-        run: terraform plan -input=false -no-color -lock=false
+        id: plan
+        run: |
+          set +e
+          terraform plan -input=false -no-color -lock=false -detailed-exitcode -out=tfplan > plan.txt 2>&1
+          code=$?
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          cat plan.txt
+          # 0: 差分なし / 2: 差分あり / それ以外: エラー
+          [ "$code" = "0" ] || [ "$code" = "2" ]
+
+      - name: Comment plan on PR
+        if: always() && steps.plan.outcome != 'skipped'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PLAN_EXIT_CODE: ${{ steps.plan.outputs.exit_code }}
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- infra-plan -->';
+            const raw = fs.readFileSync(`${process.env.TF_DIR}/plan.txt`, 'utf8');
+            const max = 60000;
+            const plan = raw.length > max ? raw.slice(0, max) + '\n...(truncated)' : raw;
+            const status = { '0': '✅ 差分なし', '2': '📝 差分あり' }[process.env.PLAN_EXIT_CODE] ?? '❌ plan 失敗';
+            const sha = context.payload.pull_request.head.sha.slice(0, 7);
+            const body = [
+              marker,
+              `### terraform plan — ${status}`,
+              '',
+              '<details><summary>出力を表示</summary>',
+              '',
+              '```',
+              plan,
+              '```',
+              '',
+              '</details>',
+              '',
+              `<sub>SA: read-only (terraform-plan) / commit: ${sha}</sub>`,
+            ].join('\n');
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
+            const existing = comments.find(c => c.user.type === 'Bot' && c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+  apply:
+    name: infra-apply
+    needs: [changes, lint]
+    if: github.event_name == 'push' && needs.changes.outputs.infra == 'true'
+    runs-on: ubuntu-latest
+    # デプロイ可能ブランチを main に限定した Environment。apply 用 SA も main のトークンしか受け付けない
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: ${{ env.TF_DIR }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Authenticate to GCP (WIF, apply SA)
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_TERRAFORM_SA_EMAIL }}
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: terraform init
+        run: terraform init -input=false
+
+      # plan を保存してから同じ plan を apply する(plan と apply の内容を一致させる)
+      - name: terraform plan
+        run: terraform plan -input=false -no-color -out=tfplan
+
+      - name: terraform apply
+        run: terraform apply -input=false -no-color tfplan

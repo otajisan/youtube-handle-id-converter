@@ -13,6 +13,12 @@ updates:
     schedule:
       interval: "weekly"
     labels: ["dependencies", "backend"]
+    groups:
+      # Kotlin の jvm / plugin.spring は同時に上げないとビルドが壊れる
+      kotlin:
+        patterns: ["org.jetbrains.kotlin*"]
+      spring:
+        patterns: ["org.springframework.boot*"]
 
   - package-ecosystem: "docker"
     directory: "/backend"

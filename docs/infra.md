@@ -52,7 +52,17 @@ terraform plan
   docker run --rm -v "$(pwd)":/data --entrypoint sh ghcr.io/terraform-linters/tflint -c 'tflint --init && tflint'
   docker run --rm -v "$(pwd)":/src aquasec/trivy config --severity HIGH,CRITICAL /src
   ```
-- `apply` はローカルから実行しない。`main` へのマージで CI が実行する(#7)
+- `apply` はローカルから実行しない。`main` へのマージで CI が実行する
+
+### CI/CD([`.github/workflows/infra-ci.yml`](../.github/workflows/infra-ci.yml))
+
+| ジョブ | トリガー | 内容 |
+|---|---|---|
+| `infra-lint` | PR / push | `fmt -check` → `validate`(backend 接続なし)→ tflint → trivy config(HIGH 以上で失敗)。GCP 認証不要 |
+| `infra-plan` | PR(同一リポジトリ) | plan 用 SA で `plan -lock=false`。結果を PR コメントに投稿(同一コメントを更新) |
+| `infra-apply` | `main` への push | apply 用 SA で `plan -out` → `apply`。Environment `production` |
+
+**Environment `production` の判断**: デプロイ可能ブランチを保護ブランチ(`main`)に限定し、必須レビュアーは設定しない。ソロ開発では承認者が PR 作成者と同一人物になり形骸化するため。apply の内容は PR 時点の plan コメントでレビューし、WIF 側でも apply 用 SA は `main` のトークンしか受け付けない(二重の制約)。共同開発者が増えた時点で必須レビュアーを追加する。
 
 ## GitHub Repository variables
 
