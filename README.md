@@ -1,6 +1,6 @@
 # youtube-handle-id-converter
 
-[![backend](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/backend-ci.yml)
+[![backend](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/backend-ci.yml) [![infra](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/infra-ci.yml/badge.svg)](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/infra-ci.yml)
 
 YouTube のハンドル(`@handle`)と Channel ID(`UC...`)を相互変換する Web ツール。
 
@@ -10,7 +10,7 @@ YouTube のハンドル(`@handle`)と Channel ID(`UC...`)を相互変換する W
 |---|---|
 | [`backend/`](backend/) | Kotlin 2.3 + Spring Boot 4.1(JDK 25)。YouTube Data API v3 の呼び出しと API Key の秘匿を担う。Cloud Run にデプロイ |
 | [`frontend/`](frontend/) | Next.js + TypeScript。静的エクスポートして GitHub Pages で公開 |
-| [`infra/`](infra/) | Terraform による GCP リソース定義 |
+| [`infra/`](infra/) | Terraform による GCP リソース定義(`yt-handle-id-converter` / `asia-northeast1`)。手順は [`docs/infra.md`](docs/infra.md) |
 
 ## ローカル開発
 
