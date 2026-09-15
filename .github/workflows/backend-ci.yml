@@ -228,9 +228,9 @@ jobs:
           image: ${{ env.IMAGE }}:${{ github.sha }}
           skip_default_labels: true # managed-by / commit-sha ラベルを付けない(Terraform の差分になる)
 
-      # 新リビジョンが Ready でトラフィックを受けていること、URL が 5xx を返さないことを確認する。
-      # /actuator/health は management ポート(非公開)なので外からは叩けない。
-      # API エンドポイント実装後(#13)は実際の変換 API を叩くように更新する
+      # 新リビジョンが Ready でトラフィックを受けていること、変換 API が応答することを確認する。
+      # 不正な入力は YouTube API を呼ばない(Quota を消費しない)ので、status=invalid の 200 を期待する。
+      # /actuator/health は management ポート(非公開)なので外からは叩けない
       - name: Smoke test
         env:
           URL: ${{ steps.deploy.outputs.url }}
@@ -249,9 +249,11 @@ jobs:
           [ "$image" = "$EXPECTED_IMAGE" ] || { echo "::error::image mismatch: $image"; exit 1; }
           # min instances 0 のためコールドスタート(最大 60 秒)を見込んでリトライする
           for i in 1 2 3 4 5 6; do
-            status=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "$URL/" || echo "000")
-            echo "GET $URL/ -> $status (attempt $i)"
-            if [ "$status" != "000" ] && [ "$status" -lt 500 ]; then exit 0; fi
+            status=$(curl -s -o /tmp/convert.json -w '%{http_code}' --max-time 60 \
+              -X POST "$URL/api/v1/convert" -H 'Content-Type: application/json' \
+              -d '{"inputs":["smoke-test-not-a-valid-input!"]}' || echo "000")
+            echo "POST $URL/api/v1/convert -> $status (attempt $i)"
+            if [ "$status" = "200" ] && grep -q '"status":"invalid"' /tmp/convert.json; then exit 0; fi
             sleep 10
           done
-          echo "::error::service did not respond successfully"; exit 1
+          echo "::error::convert API did not respond as expected"; cat /tmp/convert.json 2>/dev/null; exit 1
