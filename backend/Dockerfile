@@ -19,13 +19,12 @@ RUN --mount=type=cache,target=/root/.gradle \
 
 COPY src/ src/
 RUN --mount=type=cache,target=/root/.gradle \
-    ./gradlew --no-daemon bootJar -x test --quiet \
-    && cp build/libs/backend-*-SNAPSHOT.jar app.jar
+    ./gradlew --no-daemon bootJar -x test --quiet
 
 # ---- 2. extract ------------------------------------------------------------
 FROM eclipse-temurin:25-jdk-alpine@sha256:09349d79941fd53bb3d487b393ca118d8853c08c09193f416fe6a8718df9e732 AS extract
 WORKDIR /workspace
-COPY --from=build /workspace/app.jar app.jar
+COPY --from=build /workspace/build/libs/app.jar app.jar
 RUN java -Djarmode=tools -jar app.jar extract --layers --launcher --destination extracted
 
 # ---- 3. runtime ------------------------------------------------------------

@@ -60,6 +60,11 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
+// Dockerfile / CD から version に依存せず参照できるよう出力名を固定する
+tasks.bootJar {
+    archiveFileName = "app.jar"
+}
+
 jacoco {
     toolVersion = "0.8.14"
 }
