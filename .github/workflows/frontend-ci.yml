@@ -71,6 +71,7 @@ jobs:
       - name: build (static export)
         env:
           NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+          NEXT_PUBLIC_BUILD_SHA: ${{ github.sha }}
         run: npm run build
 
       # Pages にデプロイする成果物は main の build だけを使う
@@ -81,11 +82,12 @@ jobs:
           path: frontend/out
 
       - name: Upload coverage
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frontend-coverage
           path: frontend/coverage/
+          if-no-files-found: ignore
           retention-days: 7
 
   dependency-review:
@@ -123,15 +125,19 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
 
+      # 配信されている HTML の build-sha がこのコミットと一致するまで待つ(CDN 反映の遅延を考慮)
       - name: Smoke test
         env:
           URL: ${{ steps.deployment.outputs.page_url }}
+          SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          for i in 1 2 3 4 5 6; do
-            status=$(curl -s -o /tmp/index.html -w '%{http_code}' --max-time 30 "$URL" || echo "000")
+          for i in $(seq 1 12); do
+            status=$(curl -s -o /tmp/index.html -w '%{http_code}' --max-time 30 -H 'Cache-Control: no-cache' "$URL" || echo "000")
             echo "GET $URL -> $status (attempt $i)"
-            if [ "$status" = "200" ] && grep -q 'YouTube Handle' /tmp/index.html; then exit 0; fi
+            if [ "$status" = "200" ] && grep -q "content=\"$SHA\"" /tmp/index.html; then
+              echo "build-sha matches $SHA"; exit 0
+            fi
             sleep 10
           done
-          echo "::error::Pages did not serve the expected content"; exit 1
+          echo "::error::Pages did not serve build $SHA"; exit 1

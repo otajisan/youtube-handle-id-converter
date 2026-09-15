@@ -32,11 +32,11 @@ npm run dev                  # http://localhost:3000/youtube-handle-id-converter
 
 [`.github/workflows/frontend-ci.yml`](../.github/workflows/frontend-ci.yml) が PR と `main` への push で実行される。
 
-| ジョブ | 内容 |
-|---|---|
-| `frontend-check` | `npm ci` → lint → typecheck → test(coverage)→ build。`main` では `out/` を Pages artifact として保存 |
-| `frontend-dependency-review` | PR で severity high 以上の脆弱な依存が追加されていれば失敗(npm は依存グラフが自動解析される) |
-| `frontend-deploy` | `main` への push のみ。`deploy-pages` で https://otajisan.github.io/youtube-handle-id-converter/ に公開し、表示をスモークテスト |
+| ジョブ                       | 内容                                                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `frontend-check`             | `npm ci` → lint → typecheck → test(coverage)→ build。`main` では `out/` を Pages artifact として保存                            |
+| `frontend-dependency-review` | PR で severity high 以上の脆弱な依存が追加されていれば失敗(npm は依存グラフが自動解析される)                                    |
+| `frontend-deploy`            | `main` への push のみ。`deploy-pages` で https://otajisan.github.io/youtube-handle-id-converter/ に公開し、表示をスモークテスト |
 
 本番の `NEXT_PUBLIC_API_BASE_URL` は Repository variable からビルド時に注入される。
 
