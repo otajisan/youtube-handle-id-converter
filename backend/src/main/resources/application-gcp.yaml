@@ -1,0 +1,5 @@
+# Cloud Run 上で有効化するプロファイル(SPRING_PROFILES_ACTIVE=gcp)
+logging:
+  structured:
+    format:
+      console: io.github.otajisan.youtubehandleidconverter.logging.GoogleCloudLogFormatter
