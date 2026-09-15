@@ -14,6 +14,7 @@
     "preview": "rm -rf .preview && mkdir .preview && ln -s ../out .preview/youtube-handle-id-converter && npx --yes serve@latest .preview"
   },
   "dependencies": {
+    "lodash": "4.17.20",
     "next": "16.3.5",
     "react": "19.2.8",
     "react-dom": "19.2.8"
