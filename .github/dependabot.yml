@@ -1,0 +1,37 @@
+# 依存関係の version updates。
+# 脆弱性起因の security updates はリポジトリ設定(Dependabot security updates)側で有効化している。
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["infra"]
+
+  - package-ecosystem: "gradle"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    labels: ["backend"]
+
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    labels: ["backend"]
+
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    labels: ["frontend"]
+    groups:
+      # 型定義・Lint 系はまとめて 1 PR にする
+      dev-dependencies:
+        dependency-type: "development"
+
+  - package-ecosystem: "terraform"
+    directory: "/infra/terraform"
+    schedule:
+      interval: "weekly"
+    labels: ["infra"]
