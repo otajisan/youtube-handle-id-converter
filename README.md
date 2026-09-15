@@ -1,5 +1,7 @@
 # youtube-handle-id-converter
 
+[![backend](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/backend-ci.yml)
+
 YouTube のハンドル(`@handle`)と Channel ID(`UC...`)を相互変換する Web ツール。
 
 ## 構成
