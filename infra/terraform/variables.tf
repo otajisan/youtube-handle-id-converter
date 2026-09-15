@@ -22,3 +22,33 @@ variable "service_name" {
   type        = string
   default     = "backend"
 }
+
+variable "initial_image" {
+  description = "Cloud Run サービス作成時にだけ使うイメージ。null なら Artifact Registry の <service_name>:initial を使う。以後の image は CD が更新し Terraform は無視する(ignore_changes)"
+  type        = string
+  default     = null
+}
+
+variable "cors_allowed_origins" {
+  description = "backend が許可する CORS オリジン(カンマ区切り)。GitHub Pages のオリジン"
+  type        = string
+  default     = "https://otajisan.github.io"
+}
+
+variable "max_inputs" {
+  description = "1 リクエストで受け付ける変換件数の上限(Quota を見て調整する)"
+  type        = number
+  default     = 10
+}
+
+variable "maintenance_mode" {
+  description = "true にすると /api/** が 503 を返す(Quota 枯渇時などの緊急停止)"
+  type        = bool
+  default     = false
+}
+
+variable "auth_enabled" {
+  description = "true にすると /api/** に Basic 認証を要求する(資格情報は Secret Manager)"
+  type        = bool
+  default     = false
+}

@@ -5,9 +5,7 @@ resource "google_artifact_registry_repository" "backend" {
   format        = "DOCKER"
   description   = "backend container images"
 
-  docker_config {
-    immutable_tags = false # CD が latest を付け替えられるようにする
-  }
+  # docker_config { immutable_tags = false } は API が返さず永続差分になるため書かない(デフォルトで mutable)
 
   # 直近 10 バージョンは常に保持し、それ以外で 30 日より古いものを削除する
   cleanup_policy_dry_run = false
