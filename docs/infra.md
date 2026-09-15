@@ -132,3 +132,4 @@ Terraform の output から登録する(CD 用):
 | `GCP_DEPLOY_SA_EMAIL` | `terraform output deploy_service_account` |
 | `GCP_ARTIFACT_REGISTRY` | `terraform output artifact_registry_repository` |
 | `CLOUD_RUN_SERVICE` | `backend`(`var.service_name`) |
+| `NEXT_PUBLIC_API_BASE_URL` | `terraform output backend_url`(frontend のビルド時に埋め込む) |
