@@ -93,6 +93,17 @@ Cloud Run は `latest` バージョンを参照するため、サービス作成
 | `max_inputs` | `APP_MAX_INPUTS` | 1 リクエストの変換件数上限 |
 | `cors_allowed_origins` | `APP_CORS_ALLOWED_ORIGINS` | 許可オリジン |
 
+### CD(`main` マージ → Cloud Run)
+
+[`.github/workflows/backend-ci.yml`](../.github/workflows/backend-ci.yml) の `backend-deploy` ジョブ(`backend/**` 変更を含む `main` への push で実行、Environment `production`):
+
+1. WIF で `github-deploy` SA を借用(`main` のトークンのみ)
+2. `linux/amd64` でビルドし Artifact Registry に `<sha>` と `latest` タグで push
+3. `deploy-cloudrun` で **image だけ**を差し替え(`skip_default_labels: true`。env / secret / probe / scaling は Terraform 管理)
+4. スモークテスト: 最新リビジョンが Ready かつトラフィック 100%、image が一致、URL が 5xx でない
+
+Terraform は `image` を `ignore_changes` にしているため、CD 後も `terraform plan` は空差分になる。
+
 ### 初期イメージ(1 回限りのシード)
 
 Cloud Run サービスの作成にはイメージが必要なため、初回のみ手動で push した(`backend:initial`)。以後は CD(#9)が SHA タグで push し image を更新する。Terraform は `image` を `ignore_changes` にしている。
@@ -113,3 +124,11 @@ bootstrap が登録する。ワークフローから `vars.*` で参照する。
 | `GCP_TERRAFORM_SA_EMAIL` | 同 `service_account`(apply、`main` のみ) |
 | `GCP_TERRAFORM_PLAN_SA_EMAIL` | 同 `service_account`(plan、読み取り専用) |
 | `TF_STATE_BUCKET` | state バケット名 |
+
+Terraform の output から登録する(CD 用):
+
+| 変数 | 値の元 |
+|---|---|
+| `GCP_DEPLOY_SA_EMAIL` | `terraform output deploy_service_account` |
+| `GCP_ARTIFACT_REGISTRY` | `terraform output artifact_registry_repository` |
+| `CLOUD_RUN_SERVICE` | `backend`(`var.service_name`) |
