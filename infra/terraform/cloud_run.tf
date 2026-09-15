@@ -2,6 +2,13 @@
 # - image は作成時のみ var.initial_image を使い、以後は CD(#9)が差し替える(ignore_changes)
 # - アプリは 8180、Actuator は 8181(ingress 非公開)。probe は 8181 を直接指定する(#3 の決定)
 # - 保護機構のフラグ(APP_MAINTENANCE_MODE / APP_AUTH_ENABLED)は Terraform 変数で切り替える
+locals {
+  initial_image = coalesce(
+    var.initial_image,
+    "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.backend.repository_id}/${var.service_name}:initial",
+  )
+}
+
 resource "google_cloud_run_v2_service" "backend" {
   name     = var.service_name
   location = var.region
@@ -16,7 +23,7 @@ resource "google_cloud_run_v2_service" "backend" {
     }
 
     containers {
-      image = var.initial_image
+      image = local.initial_image
 
       ports {
         container_port = 8180 # Cloud Run がこの値を PORT として注入する

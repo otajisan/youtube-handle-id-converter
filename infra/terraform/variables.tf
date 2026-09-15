@@ -24,9 +24,9 @@ variable "service_name" {
 }
 
 variable "initial_image" {
-  description = "Cloud Run サービス作成時にだけ使うイメージ。以後の image は CD が更新し Terraform は無視する(ignore_changes)"
+  description = "Cloud Run サービス作成時にだけ使うイメージ。null なら Artifact Registry の <service_name>:initial を使う。以後の image は CD が更新し Terraform は無視する(ignore_changes)"
   type        = string
-  default     = "asia-northeast1-docker.pkg.dev/yt-handle-id-converter/backend/backend:initial"
+  default     = null
 }
 
 variable "cors_allowed_origins" {
