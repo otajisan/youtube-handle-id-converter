@@ -39,6 +39,17 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("io.mockk:mockk:1.14.11")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    constraints {
+        // Spring Boot 4.1.1 の BOM が管理する Tomcat 11.0.24 には critical な CVE がある
+        // (CVE-2026-65182 / CVE-2026-65905 / CVE-2026-68525、11.0.25 で修正)。
+        // BOM が 11.0.25 以上を管理するようになったらこの制約は削除する
+        listOf("tomcat-embed-core", "tomcat-embed-el", "tomcat-embed-websocket").forEach {
+            implementation("org.apache.tomcat.embed:$it:11.0.25") {
+                because("CVE-2026-65182 / CVE-2026-65905 / CVE-2026-68525")
+            }
+        }
+    }
 }
 
 ktlint {
