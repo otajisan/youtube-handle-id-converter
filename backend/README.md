@@ -23,6 +23,17 @@ Kotlin + Spring Boot によるバックエンド。YouTube Data API v3 の呼び
 
 Jacoco のレポートは `build/reports/jacoco/test/html/index.html`。
 
+## CI
+
+[`.github/workflows/backend-ci.yml`](../.github/workflows/backend-ci.yml) が PR と `main` への push で実行される。
+
+| ジョブ | 内容 |
+|---|---|
+| `backend-check` | ktlint → test → Jacoco(line 80% 未満で失敗)。カバレッジ要約を PR にコメント |
+| `backend-dependency-review` | 依存グラフを GitHub に送信し、PR で severity high 以上の脆弱な依存が追加されていれば失敗 |
+
+`backend/**` に変更が無い PR ではジョブがスキップされる(required check は成功扱い)。fork からの PR では PR コメントと依存グラフ送信を行わない。
+
 ## 設定
 
 | 環境変数 | 用途 |

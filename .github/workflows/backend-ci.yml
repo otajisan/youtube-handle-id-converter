@@ -1,0 +1,126 @@
+# backend の CI: ktlint → test → Jacoco 閾値検証、依存グラフ送信 + 脆弱な依存の検出
+#
+# - PR では常に起動し、backend/** に変更が無ければジョブを `if:` でスキップする。
+#   ワークフロー自体を paths: で絞ると required check が pending のまま残りマージできなくなるため。
+# - Actions は SHA で固定し、Dependabot(github-actions)が更新する。
+# - fork からの PR では GITHUB_TOKEN が read-only のため、書き込みを伴う
+#   ステップ(PR コメント、依存グラフ送信)はスキップする。
+name: backend
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: "25"
+
+jobs:
+  changes:
+    name: detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      # 同一リポジトリからの PR / push なら true。fork PR では書き込み系ステップを抑止する
+      writable: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: filter
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: |
+            backend:
+              - "backend/**"
+              - ".github/workflows/backend-ci.yml"
+
+  check:
+    name: backend-check
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # Jacoco のカバレッジ要約を PR にコメントする
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          # main 以外ではキャッシュを書き込まず、ブランチごとのキャッシュ肥大を防ぐ
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: ktlint
+        run: ./gradlew ktlintCheck --no-daemon
+
+      - name: test + Jacoco
+        run: ./gradlew test jacocoTestReport jacocoTestCoverageVerification --no-daemon
+
+      - name: Jacoco summary comment
+        if: github.event_name == 'pull_request' && needs.changes.outputs.writable == 'true' && (success() || failure())
+        uses: madrapps/jacoco-report@e51ce1f46f7f8b5331593f935e59cbaf44b84920 # v1.8.0
+        with:
+          paths: backend/build/reports/jacoco/test/jacocoTestReport.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "backend coverage"
+          update-comment: true
+          min-coverage-overall: 80
+          min-coverage-changed-files: 80
+
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backend-reports
+          path: |
+            backend/build/reports/
+            backend/build/test-results/
+          retention-days: 7
+
+  dependency-review:
+    name: backend-dependency-review
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' && needs.changes.outputs.writable == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # 依存グラフの送信(Dependency submission API)
+      pull-requests: write # dependency-review の要約を PR にコメントする
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      # Gradle は GitHub の依存グラフ自動解析の対象外なので、明示的に送信する。
+      # main への push でも送信し、Dependabot alerts の対象にする
+      - name: Submit dependency graph
+        uses: gradle/actions/dependency-submission@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          build-root-directory: backend
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Dependency review
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
+          # 直前に送信したスナップショットの反映を待つ
+          retry-on-snapshot-warnings: true
+          retry-on-snapshot-warnings-timeout: 180
