@@ -14,7 +14,7 @@ YouTube のハンドル(`@handle`)と Channel ID(`UC...`)を相互変換する W
 
 ```sh
 cd backend && ./gradlew check     # ktlint → test → Jacoco 閾値検証
-cd backend && ./gradlew bootRun   # http://localhost:8080/actuator/health
+cd backend && ./gradlew bootRun   # app: http://localhost:8180 / health: http://localhost:8181/actuator/health
 ```
 
 JDK 25 は Gradle toolchain が自動取得するため事前インストールは不要(Gradle 自体の起動には JDK 17 以上が必要)。詳細は [`backend/README.md`](backend/README.md)。
