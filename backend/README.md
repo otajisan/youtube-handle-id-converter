@@ -56,10 +56,25 @@ docker compose up --build     # http://localhost:8180(Actuator の 8181 はホ�
 - `compose.yaml` では `read_only` / `cap_drop: ALL` / `no-new-privileges` を有効化
 - Cloud Run は `HEALTHCHECK` を無視するため、probe は Terraform(#8)で `MANAGEMENT_PORT` を指定する
 
+## YouTube Data API クライアント
+
+[`youtube/`](src/main/kotlin/io/github/otajisan/youtubehandleidconverter/youtube/) パッケージ。`channels.list` の薄いラッパー。
+
+| メソッド | API 呼び出し | Quota | 未存在時 |
+|---|---|---|---|
+| `byHandle(handle)` | `?part=id,snippet&forHandle=` | 1 unit / 件 | `YouTubeApiException.NotFound` |
+| `byIds(ids)`(最大 50 件) | `?part=id,snippet&id=a,b,c` | 1 unit / リクエスト | 結果に含まれない |
+
+- 403 + `reason=quotaExceeded` → `QuotaExceeded`、それ以外の HTTP エラー / 通信エラー → `Upstream`(メッセージに URL や鍵を含めない)
+- `snippet.customUrl` が無いチャンネルは `handle = null`
+- タイムアウトは `spring.http.clients.connect-timeout` / `read-timeout`(3s / 5s)
+- テストは `@RestClientTest` + `MockRestServiceServer`(実 API Key は使わない)
+
 ## 設定
 
 | 環境変数 | 用途 |
 |---|---|
+| `YOUTUBE_API_KEY` | YouTube Data API v3 の API Key(**必須**。未設定なら起動時に失敗する)。`x-goog-api-key` ヘッダで送り URL には含めない |
 | `PORT` | アプリケーションのリッスンポート(デフォルト 8180、Cloud Run が注入) |
 | `MANAGEMENT_PORT` | Actuator のリッスンポート(デフォルト 8181) |
 | `SPRING_PROFILES_ACTIVE=gcp` | Cloud Logging 形式の JSON ログを標準出力に出す |

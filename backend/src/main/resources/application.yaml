@@ -1,6 +1,11 @@
 spring:
   application:
     name: youtube-handle-id-converter
+  http:
+    clients:
+      # 自動構成の RestClient.Builder に適用される(YouTube Data API 呼び出し)
+      connect-timeout: 3s
+      read-timeout: 5s
 
 server:
   # Cloud Run は PORT 環境変数でリッスンポートを指定する。デフォルトは推測されやすい 8080 を避ける
@@ -20,3 +25,7 @@ management:
     health:
       probes:
         enabled: true
+
+youtube:
+  # Secret Manager → 環境変数 YOUTUBE_API_KEY。未設定なら起動時に検証エラーで落とす
+  api-key: ${YOUTUBE_API_KEY:}

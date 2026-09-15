@@ -157,7 +157,8 @@ jobs:
 
       - name: Smoke test
         run: |
-          docker run -d --name backend youtube-handle-id-converter-backend:ci
+          # YOUTUBE_API_KEY が無いと起動時の検証で落ちる(fail-fast)ため、起動確認用のダミー値を渡す
+          docker run -d --name backend -e YOUTUBE_API_KEY=ci-dummy youtube-handle-id-converter-backend:ci
           for i in $(seq 1 30); do
             status=$(docker inspect -f '{{.State.Status}}' backend)
             if [ "$status" != "running" ]; then

@@ -15,7 +15,7 @@ import java.net.http.HttpResponse
  */
 @SpringBootTest(
     webEnvironment = WebEnvironment.RANDOM_PORT,
-    properties = ["management.server.port=0"],
+    properties = ["management.server.port=0", "youtube.api-key=test-api-key"],
 )
 class HealthEndpointTest {
     @Value("\${local.server.port}")
