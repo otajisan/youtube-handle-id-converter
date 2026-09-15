@@ -3,6 +3,8 @@
 #
 # - backend-ci と同様、PR では常に起動し infra/** に変更が無ければスキップする
 # - fork PR では id-token が取れないため WIF 認証を伴うジョブはスキップする
+# - plan は読み取り専用の SA(terraform-plan)で実行する。PR 上の HCL が管理権限で
+#   動かないようにするため。apply 用 SA(terraform)は main ブランチからしか借用できない
 name: infra
 
 on:
@@ -53,7 +55,7 @@ jobs:
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ vars.GCP_TERRAFORM_SA_EMAIL }}
+          service_account: ${{ vars.GCP_TERRAFORM_PLAN_SA_EMAIL }}
 
       - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
         with:
@@ -62,5 +64,6 @@ jobs:
       - name: terraform init
         run: terraform init -input=false
 
+      # plan 用 SA は state バケットに objectViewer しか持たないためロックを取らない
       - name: terraform plan
-        run: terraform plan -input=false -no-color
+        run: terraform plan -input=false -no-color -lock=false
