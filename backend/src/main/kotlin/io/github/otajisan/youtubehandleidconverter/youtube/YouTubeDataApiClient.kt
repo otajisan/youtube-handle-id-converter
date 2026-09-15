@@ -14,7 +14,7 @@ import tools.jackson.databind.ObjectMapper
  * - Channel ID → チャンネル: [byIds](最大 50 件 / 1 unit)
  *
  * API Key は `x-goog-api-key` ヘッダで送り、URL・例外メッセージ・ログに残さない。
- * タイムアウトは自動構成の [RestClient.Builder] に `spring.http.client.*` で設定する(テストではモックに差し替わる)。
+ * タイムアウトは自動構成の [RestClient.Builder] に `spring.http.clients.*` で設定する(テストではモックに差し替わる)。
  */
 @Component
 class YouTubeDataApiClient(

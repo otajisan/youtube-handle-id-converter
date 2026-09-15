@@ -13,4 +13,7 @@ data class YouTubeProperties(
     /** API Key。URL には含めず `x-goog-api-key` ヘッダで送る */
     @field:NotBlank val apiKey: String,
     val baseUrl: String = "https://www.googleapis.com/youtube/v3",
-)
+) {
+    /** 誤ってログ等に出力しても API Key が漏れないようマスクする */
+    override fun toString(): String = "YouTubeProperties(apiKey=****, baseUrl=$baseUrl)"
+}

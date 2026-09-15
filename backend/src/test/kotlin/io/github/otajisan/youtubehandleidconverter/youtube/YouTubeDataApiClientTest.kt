@@ -178,6 +178,13 @@ class YouTubeDataApiClientTest {
             .hasCauseInstanceOf(SocketTimeoutException::class.java)
     }
 
+    @Test
+    fun `Properties の toString は API Key をマスクする`() {
+        assertThat(YouTubeProperties(apiKey = "secret-key").toString())
+            .doesNotContain("secret-key")
+            .contains("****")
+    }
+
     private fun channelList(vararg items: String) =
         """{"kind":"youtube#channelListResponse","items":[${items.joinToString(",")}]}"""
 
