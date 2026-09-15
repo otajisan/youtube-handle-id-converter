@@ -1,0 +1,8 @@
+# ビルドコンテキストから除外(ソースと Gradle 設定のみ送る)
+.gradle/
+.kotlin/
+build/
+out/
+*.md
+.idea/
+*.iml

@@ -31,8 +31,29 @@ Jacoco のレポートは `build/reports/jacoco/test/html/index.html`。
 |---|---|
 | `backend-check` | ktlint → test → Jacoco(line 80% 未満で失敗)。カバレッジ要約を PR にコメント |
 | `backend-dependency-review` | 依存グラフを GitHub に送信し、PR で severity high 以上の脆弱な依存が追加されていれば失敗 |
+| `backend-docker-build` | hadolint → Docker build(push なし)→ コンテナ起動して healthy になることを確認 |
 
 `backend/**` に変更が無い PR ではジョブがスキップされる(required check は成功扱い)。fork からの PR では PR コメントと依存グラフ送信を行わない。
+
+## Docker
+
+```sh
+# リポジトリルートで
+cp .env.example .env          # 初回のみ
+docker compose up --build     # http://localhost:8180(Actuator の 8181 はホストに公開しない)
+```
+
+[`Dockerfile`](Dockerfile) はマルチステージ構成:
+
+| ステージ | ベース | 内容 |
+|---|---|---|
+| build | `eclipse-temurin:25-jdk-alpine` | Gradle で bootJar を作成(テストは CI 側で実行) |
+| extract | 同上 | `-Djarmode=tools extract --layers` で依存 / ローダー / アプリをレイヤー分割 |
+| runtime | `eclipse-temurin:25-jre-alpine` | 非 root(uid 10001)、`HEALTHCHECK` は `MANAGEMENT_PORT` の readiness を参照 |
+
+- ベースイメージはダイジェスト固定(Dependabot の `docker` エコシステムが更新)
+- `compose.yaml` では `read_only` / `cap_drop: ALL` / `no-new-privileges` を有効化
+- Cloud Run は `HEALTHCHECK` を無視するため、probe は Terraform(#8)で `MANAGEMENT_PORT` を指定する
 
 ## 設定
 
