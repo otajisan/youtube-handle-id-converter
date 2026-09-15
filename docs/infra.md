@@ -5,7 +5,7 @@
 | 層 | 管理方法 | 内容 |
 |---|---|---|
 | bootstrap | [`infra/bootstrap.sh`](../infra/bootstrap.sh)(手動実行、冪等) | GCP プロジェクト、課金紐付け、tfstate バケット、Terraform 実行 SA、WIF、GitHub Repository variables |
-| それ以外 | [`infra/terraform/`](../infra/terraform/)(CI で plan / apply) | API 有効化、Artifact Registry、Secret Manager、Cloud Run、IAM(#8 で追加) |
+| それ以外 | [`infra/terraform/`](../infra/terraform/)(CI で plan / apply) | API 有効化、Artifact Registry、Secret Manager、Cloud Run、IAM |
 
 bootstrap 以外の GCP リソースを手動で変更しない。Secret の**値**は Terraform 管理外(`gcloud secrets versions add` で投入し、tfstate に残さない)。
 
@@ -63,6 +63,24 @@ terraform plan
 | `infra-apply` | `main` への push | apply 用 SA で `plan -out` → `apply`。Environment `production` |
 
 **Environment `production` の判断**: デプロイ可能ブランチを保護ブランチ(`main`)に限定し、必須レビュアーは設定しない。ソロ開発では承認者が PR 作成者と同一人物になり形骸化するため。apply の内容は PR 時点の plan コメントでレビューし、WIF 側でも apply 用 SA は `main` のトークンしか受け付けない(二重の制約)。共同開発者が増えた時点で必須レビュアーを追加する。
+
+## Terraform が管理するリソース
+
+| ファイル | リソース |
+|---|---|
+| `apis.tf` | `run` / `artifactregistry` / `secretmanager` API |
+| `artifact_registry.tf` | Docker リポジトリ `backend`(直近 10 バージョン保持、30 日超は削除) |
+| `secrets.tf` | Secret の器 `YOUTUBE_API_KEY` / `APP_AUTH_USERNAME` / `APP_AUTH_PASSWORD`。実行 SA にのみ `secretAccessor` |
+| `iam.tf` | 実行 SA `backend-runtime`、CD 用 SA `github-deploy`(AR writer + 実行 SA の `serviceAccountUser`、WIF は `main` のみ) |
+| `cloud_run.tf` | Cloud Run サービス(#8 の 2 段階目で追加) |
+
+### Secret の値の投入(Terraform 管理外)
+
+```sh
+printf '%s' 'THE_API_KEY' | gcloud secrets versions add YOUTUBE_API_KEY --project=yt-handle-id-converter --data-file=-
+```
+
+Cloud Run は `latest` バージョンを参照するため、サービス作成前に各 Secret に少なくとも 1 つのバージョンが必要(未設定の項目はダミー値でよい)。
 
 ## GitHub Repository variables
 
