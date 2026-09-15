@@ -32,9 +32,17 @@ updates:
       interval: "weekly"
     labels: ["dependencies", "frontend"]
     groups:
+      # react / react-dom / 型定義は同一バージョンでないと動かない
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
       # 型定義・Lint 系はまとめて 1 PR にする
       dev-dependencies:
         dependency-type: "development"
+        exclude-patterns: ["@types/react", "@types/react-dom"]
+    ignore:
+      # typescript-eslint が TS 7 未対応の間は major 更新を止める(対応後に外す)
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "terraform"
     directory: "/infra/terraform"
