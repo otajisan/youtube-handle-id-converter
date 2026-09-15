@@ -1,8 +1,10 @@
 # youtube-handle-id-converter
 
-[![backend](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/backend-ci.yml) [![infra](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/infra-ci.yml/badge.svg)](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/infra-ci.yml)
+[![backend](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/backend-ci.yml) [![infra](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/infra-ci.yml/badge.svg)](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/infra-ci.yml) [![frontend](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/otajisan/youtube-handle-id-converter/actions/workflows/frontend-ci.yml)
 
 YouTube のハンドル(`@handle`)と Channel ID(`UC...`)を相互変換する Web ツール。
+
+公開 URL: https://otajisan.github.io/youtube-handle-id-converter/
 
 ## 構成
 

@@ -1,0 +1,137 @@
+# frontend の CI/CD: lint → typecheck → test → build、依存脆弱性チェック、
+# main への push では GitHub Pages にデプロイする。
+#
+# - backend-ci と同様、PR では常に起動し frontend/** に変更が無ければジョブをスキップする
+# - npm は GitHub の依存グラフが package-lock.json を自動解析するため、依存グラフの送信は不要
+# - fork PR では GITHUB_TOKEN が read-only のため、書き込みを伴うステップはスキップする
+name: frontend
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# PR: 同じ PR の古い run は打ち切る / main: ref 単位で直列化しデプロイの順序を保つ
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "24"
+
+jobs:
+  changes:
+    name: detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      writable: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: filter
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: |
+            frontend:
+              - "frontend/**"
+              - ".github/workflows/frontend-ci.yml"
+
+  check:
+    name: frontend-check
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: lint (ESLint + Prettier)
+        run: npm run lint
+
+      - name: typecheck
+        run: npm run typecheck
+
+      - name: test
+        run: npm run test:coverage
+
+      # 本番の API URL はビルド時に埋め込まれる(NEXT_PUBLIC_*)
+      - name: build (static export)
+        env:
+          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+        run: npm run build
+
+      # Pages にデプロイする成果物は main の build だけを使う
+      - name: Upload Pages artifact
+        if: github.event_name == 'push'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: frontend/out
+
+      - name: Upload coverage
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          retention-days: 7
+
+  dependency-review:
+    name: frontend-dependency-review
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.frontend == 'true' && needs.changes.outputs.writable == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # 要約を PR にコメントする
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
+
+  deploy:
+    name: frontend-deploy
+    needs: [changes, check]
+    if: github.event_name == 'push' && needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    # deploy-pages が使う Environment(GitHub が自動作成)。保護ブランチ限定にする
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
+      - name: Smoke test
+        env:
+          URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          for i in 1 2 3 4 5 6; do
+            status=$(curl -s -o /tmp/index.html -w '%{http_code}' --max-time 30 "$URL" || echo "000")
+            echo "GET $URL -> $status (attempt $i)"
+            if [ "$status" = "200" ] && grep -q 'YouTube Handle' /tmp/index.html; then exit 0; fi
+            sleep 10
+          done
+          echo "::error::Pages did not serve the expected content"; exit 1
