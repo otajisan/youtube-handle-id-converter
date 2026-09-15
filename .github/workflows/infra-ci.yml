@@ -14,9 +14,10 @@ on:
   push:
     branches: [main]
 
+# PR: 同じ PR の古い run は打ち切る / main: ref 単位で直列化し apply が並走して state ロック競合しないようにする
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }} # apply は途中で止めない
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -149,9 +150,9 @@ jobs:
               '',
               '<details><summary>出力を表示</summary>',
               '',
-              '```',
+              '````',
               plan,
-              '```',
+              '````',
               '',
               '</details>',
               '',
