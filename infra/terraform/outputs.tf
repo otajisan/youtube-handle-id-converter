@@ -2,3 +2,18 @@ output "project_number" {
   description = "GCP プロジェクト番号"
   value       = data.google_project.this.number
 }
+
+output "artifact_registry_repository" {
+  description = "backend イメージの push 先(docker tag に使うパス)"
+  value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.backend.repository_id}"
+}
+
+output "runtime_service_account" {
+  description = "Cloud Run 実行 SA"
+  value       = google_service_account.runtime.email
+}
+
+output "deploy_service_account" {
+  description = "CD(GitHub Actions)用 SA。GCP_DEPLOY_SA_EMAIL に登録する"
+  value       = google_service_account.deploy.email
+}
