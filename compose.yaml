@@ -1,0 +1,28 @@
+# ローカル起動: cp .env.example .env && docker compose up --build
+services:
+  backend:
+    build:
+      context: ./backend
+    image: youtube-handle-id-converter-backend:local
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PORT: 8180
+      MANAGEMENT_PORT: 8181
+    ports:
+      # アプリケーションポートのみ公開。Actuator(8181)はホストに出さない
+      - "8180:8180"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8181/actuator/health/readiness"]
+      interval: 10s
+      timeout: 3s
+      start_period: 20s
+      retries: 3
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

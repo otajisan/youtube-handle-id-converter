@@ -6,25 +6,25 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    labels: ["infra"]
+    labels: ["dependencies", "infra"]
 
   - package-ecosystem: "gradle"
     directory: "/backend"
     schedule:
       interval: "weekly"
-    labels: ["backend"]
+    labels: ["dependencies", "backend"]
 
   - package-ecosystem: "docker"
     directory: "/backend"
     schedule:
       interval: "weekly"
-    labels: ["backend"]
+    labels: ["dependencies", "backend"]
 
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
       interval: "weekly"
-    labels: ["frontend"]
+    labels: ["dependencies", "frontend"]
     groups:
       # 型定義・Lint 系はまとめて 1 PR にする
       dev-dependencies:
@@ -34,4 +34,4 @@ updates:
     directory: "/infra/terraform"
     schedule:
       interval: "weekly"
-    labels: ["infra"]
+    labels: ["dependencies", "infra"]

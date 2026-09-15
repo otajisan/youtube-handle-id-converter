@@ -15,6 +15,11 @@ YouTube のハンドル(`@handle`)と Channel ID(`UC...`)を相互変換する W
 ## ローカル開発
 
 ```sh
+# Docker で起動
+cp .env.example .env              # 初回のみ。API Key 等を記入
+docker compose up --build         # http://localhost:8180
+
+# Gradle で直接起動
 cd backend && ./gradlew check     # ktlint → test → Jacoco 閾値検証
 cd backend && ./gradlew bootRun   # app: http://localhost:8180 / health: http://localhost:8181/actuator/health
 ```
