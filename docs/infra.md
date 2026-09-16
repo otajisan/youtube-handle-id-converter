@@ -68,7 +68,7 @@ terraform plan
 
 | ファイル | リソース |
 |---|---|
-| `apis.tf` | `run` / `artifactregistry` / `secretmanager` API |
+| `apis.tf` | `run` / `artifactregistry` / `secretmanager` / `youtube`(Data API v3)API |
 | `artifact_registry.tf` | Docker リポジトリ `backend`(直近 10 バージョン保持、30 日超は削除) |
 | `secrets.tf` | Secret の器 `YOUTUBE_API_KEY` / `APP_AUTH_USERNAME` / `APP_AUTH_PASSWORD`。実行 SA にのみ `secretAccessor` |
 | `iam.tf` | 実行 SA `backend-runtime`、CD 用 SA `github-deploy`(AR writer + 実行 SA の `serviceAccountUser`、WIF は `main` のみ) |
@@ -76,11 +76,15 @@ terraform plan
 
 ### Secret の値の投入(Terraform 管理外)
 
+API Key は [Cloud Console → 認証情報](https://console.cloud.google.com/apis/credentials?project=yt-handle-id-converter) で発行し、**API の制限を YouTube Data API v3 のみ**にする。値は端末に表示せず、ファイルからパイプで投入する:
+
 ```sh
-printf '%s' 'THE_API_KEY' | gcloud secrets versions add YOUTUBE_API_KEY --project=yt-handle-id-converter --data-file=-
+# .env(YOUTUBE_API_KEY=...)から値だけを取り出して投入する
+grep '^YOUTUBE_API_KEY=' .env | cut -d= -f2- | tr -d '\n' \
+  | gcloud secrets versions add YOUTUBE_API_KEY --project=yt-handle-id-converter --data-file=-
 ```
 
-Cloud Run は `latest` バージョンを参照するため、サービス作成前に各 Secret に少なくとも 1 つのバージョンが必要(未設定の項目はダミー値でよい)。
+Cloud Run は `latest` バージョンを参照するため、サービス作成前に各 Secret に少なくとも 1 つのバージョンが必要(未設定の項目はダミー値でよい)。**環境変数として注入される Secret は新しいインスタンスの起動時に解決される**ので、値を変えたら新しいリビジョンをデプロイして確実に反映させる(`gcloud run services update backend --region=asia-northeast1 --update-env-vars=APP_MAINTENANCE_MODE=false` のように現在値と同じ値で update すれば設定を変えずにリビジョンだけ作れる)。
 
 ### Cloud Run の運用フラグ
 
