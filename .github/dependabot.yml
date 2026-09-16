@@ -26,6 +26,7 @@ updates:
       interval: "weekly"
     labels: ["dependencies", "backend"]
 
+  # pnpm-lock.yaml も "npm" エコシステムが扱う
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:

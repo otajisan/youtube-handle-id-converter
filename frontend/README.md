@@ -14,24 +14,23 @@ Next.js (App Router) + TypeScript。静的エクスポートして GitHub Pages(
 ## 開発
 
 ```sh
-npm ci
-cp .env.example .env.local   # 初回のみ。NEXT_PUBLIC_API_BASE_URL を設定
-npm run dev                  # http://localhost:3000/youtube-handle-id-converter/
+pnpm install --frozen-lockfile   # pnpm 未導入なら npm i -g pnpm(バージョンは packageManager に従う)
+cp .env.example .env.local       # 初回のみ。NEXT_PUBLIC_API_BASE_URL を設定
+pnpm dev                         # http://localhost:3000/youtube-handle-id-converter/
 ```
 
-| スクリプト                           | 内容                                                                                            |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| `npm run lint`                       | ESLint + Prettier チェック                                                                      |
-| `npm run format`                     | Prettier で整形                                                                                 |
-| `npm run typecheck`                  | `tsc --noEmit`                                                                                  |
-| `npm test` / `npm run test:coverage` | Vitest(`src/**/*.test.{ts,tsx}`)                                                                |
-| `npm run build`                      | `out/` に静的エクスポート                                                                       |
-| `npm run lock:linux`                 | Linux コンテナで `package-lock.json` を再生成(下記参照)                                         |
-| `npm run preview`                    | `out/` を basePath 配下(`http://localhost:3000/youtube-handle-id-converter/`)で静的配信して確認 |
+| スクリプト                         | 内容                                                                                            |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `pnpm lint`                        | ESLint + Prettier チェック                                                                      |
+| `pnpm format`                      | Prettier で整形                                                                                 |
+| `pnpm typecheck`                   | `tsc --noEmit`                                                                                  |
+| `pnpm test` / `pnpm test:coverage` | Vitest(`src/**/*.test.{ts,tsx}`)                                                                |
+| `pnpm build`                       | `out/` に静的エクスポート                                                                       |
+| `pnpm preview`                     | `out/` を basePath 配下(`http://localhost:3000/youtube-handle-id-converter/`)で静的配信して確認 |
 
 ### 依存関係を変更したとき
 
-macOS で `npm install` すると Linux 向けの optional 依存(`@emnapi/*` 等)が `package-lock.json` から落ち、CI(Linux)の `npm ci` が失敗する([npm/cli#4828](https://github.com/npm/cli/issues/4828))。依存を追加・更新したら **`npm run lock:linux`** で lockfile を作り直してからコミットする。Dependabot の PR は Linux で生成されるため影響しない。
+`pnpm add` / `pnpm update` 後は `pnpm-lock.yaml` をそのままコミットする。pnpm の lockfile は optional 依存を全プラットフォーム分記録するため、npm で必要だった「Linux で lockfile を再生成する」回避策(npm/cli#4828)は不要。CI は `pnpm install --frozen-lockfile` で lockfile と `package.json` の不整合を検出する。
 
 ### ESLint の構成について
 
@@ -43,8 +42,8 @@ macOS で `npm install` すると Linux 向けの optional 依存(`@emnapi/*` �
 
 | ジョブ                       | 内容                                                                                                                            |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `frontend-check`             | `npm ci` → lint → typecheck → test(coverage)→ build。`main` では `out/` を Pages artifact として保存                            |
-| `frontend-dependency-review` | PR で severity high 以上の脆弱な依存が追加されていれば失敗(npm は依存グラフが自動解析される)                                    |
+| `frontend-check`             | `pnpm install --frozen-lockfile` → lint → typecheck → test(coverage)→ build。`main` では `out/` を Pages artifact として保存    |
+| `frontend-dependency-review` | PR で severity high 以上の脆弱な依存が追加されていれば失敗(`pnpm-lock.yaml` は依存グラフが自動解析される)                       |
 | `frontend-deploy`            | `main` への push のみ。`deploy-pages` で https://otajisan.github.io/youtube-handle-id-converter/ に公開し、表示をスモークテスト |
 
 本番の `NEXT_PUBLIC_API_BASE_URL` は Repository variable からビルド時に注入される。
