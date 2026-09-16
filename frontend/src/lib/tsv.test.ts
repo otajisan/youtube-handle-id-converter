@@ -17,7 +17,23 @@ describe("toTsv", () => {
 
     expect(tsv.split("\n")).toEqual([
       "input\tstatus\thandle\tchannelId\ttitle\tthumbnailUrl",
-      "@a\tok\t@a\tUCa\tA B C\t",
+      "'@a\tok\t'@a\tUCa\tA B C\t",
     ]);
+  });
+
+  it("= + - @ で始まるセルは数式として解釈されないよう ' を付ける", () => {
+    const tsv = toTsv([
+      {
+        input: "UCa",
+        status: "ok",
+        handle: null,
+        channelId: "UCa",
+        title: "=SUM(A1)",
+        thumbnailUrl: null,
+        reason: null,
+      },
+    ]);
+
+    expect(tsv.split("\n")[1]).toBe("UCa\tok\t\tUCa\t'=SUM(A1)\t");
   });
 });

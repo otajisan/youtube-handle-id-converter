@@ -4,7 +4,9 @@ const HEADER = ["input", "status", "handle", "channelId", "title", "thumbnailUrl
 
 function cell(value: string | null): string {
   // TSV では区切りと改行を潰す
-  return (value ?? "").replace(/[\t\r\n]+/g, " ");
+  const text = (value ?? "").replace(/[\t\r\n]+/g, " ");
+  // 表計算ソフトに貼り付けたとき数式として解釈されないようにする(CSV インジェクション対策)
+  return /^[=+\-@]/.test(text) ? `'${text}` : text;
 }
 
 export function toTsvRow(r: ConvertResult): string {

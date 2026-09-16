@@ -153,7 +153,7 @@ describe("Converter", () => {
 
     await user.click(await screen.findByRole("button", { name: "@youtube の結果をコピー" }));
     expect(await navigator.clipboard.readText()).toBe(
-      "@youtube\tok\t@youtube\tUC-9-kyTW8ZkZNDHQJ6FgpwQ\tYouTube\thttps://yt3.ggpht.com/x=s88",
+      "'@youtube\tok\t'@youtube\tUC-9-kyTW8ZkZNDHQJ6FgpwQ\tYouTube\thttps://yt3.ggpht.com/x=s88",
     );
 
     await user.click(screen.getByRole("button", { name: "全件を TSV でコピー" }));
