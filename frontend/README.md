@@ -45,6 +45,17 @@ macOS で `npm install` すると Linux 向けの optional 依存(`@emnapi/*` �
 
 本番の `NEXT_PUBLIC_API_BASE_URL` は Repository variable からビルド時に注入される。
 
+## 画面構成
+
+| ファイル | 内容 |
+|---|---|
+| `src/components/Converter.tsx` | 変換フォーム。1 行 1 件のテキストエリア、種別プレビュー、上限超過の警告、結果テーブル、行 / 全件 TSV コピー、エラー出し分け(429 Quota / 429 レートリミット / 503 / 401 → 資格情報入力 / 502 / ネットワーク) |
+| `src/lib/api.ts` | `POST /api/v1/convert` の `fetch` ラッパー。ProblemDetail を種別付き `ApiError` に変換。Basic 認証は `Authorization` ヘッダで送る(cross-origin `fetch` ではブラウザのダイアログが出ないため自前の入力欄) |
+| `src/lib/inputKind.ts` | 入力種別のプレビュー判定(backend の `InputParser` と同じ規則。最終判定は backend) |
+| `src/lib/tsv.ts` | 結果の TSV 化 |
+
+上限件数は既定 10 で、backend が 400(`max`)を返した場合はその値に追従する。
+
 ## 静的エクスポートの制約
 
 `next.config.ts` で `output: "export"` / `basePath: "/youtube-handle-id-converter"` / `trailingSlash: true` / `images.unoptimized: true` を設定している。SSR・API Route・Server Actions・画像最適化は使えない。backend への通信はすべてブラウザから `NEXT_PUBLIC_API_BASE_URL` に対して行う。
