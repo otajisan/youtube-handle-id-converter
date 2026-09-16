@@ -4,7 +4,7 @@ import io.github.otajisan.youtubehandleidconverter.config.AppProperties
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import org.springframework.core.Ordered
+import org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterProperties
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
@@ -14,10 +14,11 @@ import tools.jackson.databind.ObjectMapper
 
 /**
  * `APP_MAINTENANCE_MODE=true` のとき /api 配下を 503 で止める。
- * 認証より前(最優先)に動くので、誰に対しても即座に効く。Actuator は management ポートなので対象外。
+ * Spring Security の直後に置き、CORS ヘッダの付与と preflight 応答を先に済ませてから止める
+ * (ブラウザが 503 の本文と Retry-After を読めるようにするため)。Actuator は management ポートなので対象外。
  */
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(SecurityFilterProperties.DEFAULT_FILTER_ORDER + 1)
 class MaintenanceModeFilter(
     private val properties: AppProperties,
     private val objectMapper: ObjectMapper,

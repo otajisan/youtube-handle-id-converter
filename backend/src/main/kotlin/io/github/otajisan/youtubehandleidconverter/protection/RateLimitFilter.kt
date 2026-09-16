@@ -7,7 +7,7 @@ import io.github.otajisan.youtubehandleidconverter.config.AppProperties
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import org.springframework.core.Ordered
+import org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterProperties
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
@@ -19,10 +19,11 @@ import java.time.Duration
 /**
  * IP 単位のインメモリ・レートリミット(トークンバケット)。
  * Cloud Run のインスタンスごとに独立して数えるため厳密ではないが、単一 IP からの連打を抑える目的には足りる。
- * クライアント IP は Cloud Run が付与する X-Forwarded-For の先頭を使う。
+ * クライアント IP は Cloud Run(Google Frontend)が X-Forwarded-For の**末尾**に付与する値を使う。
+ * 先頭はクライアントが自由に書けるため信用しない。Spring Security の後に置き、429 にも CORS ヘッダが付くようにする。
  */
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE + 1)
+@Order(SecurityFilterProperties.DEFAULT_FILTER_ORDER + 2)
 class RateLimitFilter(
     private val properties: AppProperties,
     private val objectMapper: ObjectMapper,
@@ -74,7 +75,7 @@ class RateLimitFilter(
         request
             .getHeader("X-Forwarded-For")
             ?.split(',')
-            ?.firstOrNull()
+            ?.lastOrNull()
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
             ?: request.remoteAddr

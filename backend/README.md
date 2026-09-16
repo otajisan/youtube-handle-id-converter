@@ -92,9 +92,9 @@ CORS は `APP_CORS_ALLOWED_ORIGINS`(カンマ区切り)のオリジンからの�
 
 | 機構 | 実装 | 応答 |
 |---|---|---|
-| メンテナンスモード | 最優先の Filter(認証より前に効く) | 503 ProblemDetail + `Retry-After` |
+| メンテナンスモード | Spring Security 直後の Filter(CORS 処理後、preflight は通す) | 503 ProblemDetail + `Retry-After` |
 | Basic 認証 | Spring Security(`/api/**` のみ。preflight と `/v3/api-docs` は公開、CSRF / セッションなし) | 401 ProblemDetail + `WWW-Authenticate` |
-| レートリミット | Bucket4j + Caffeine、`X-Forwarded-For` 先頭の IP 単位、インスタンス内メモリ | 429 ProblemDetail + `Retry-After` |
+| レートリミット | Bucket4j + Caffeine、`X-Forwarded-For` **末尾**(Cloud Run が付与する実 IP)単位、インスタンス内メモリ | 429 ProblemDetail + `Retry-After` |
 
 ## YouTube Data API クライアント
 
