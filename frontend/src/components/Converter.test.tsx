@@ -130,6 +130,44 @@ describe("Converter", () => {
     expect(screen.queryByLabelText("ユーザー名")).not.toBeInTheDocument();
   });
 
+  it("誤った資格情報で再度 401 なら、その旨を表示する", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(401, {})));
+
+    render(<Converter />);
+    const user = await typeAndSubmit("@youtube");
+    expect(await screen.findByRole("alert")).toHaveTextContent("認証が必要です");
+
+    await user.type(screen.getByLabelText("ユーザー名"), "op");
+    await user.type(screen.getByLabelText("パスワード"), "wrong");
+    await user.click(screen.getByRole("button", { name: "変換する" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("正しくありません");
+    expect(screen.getByLabelText("ユーザー名")).toHaveValue("op");
+  });
+
+  it("資格情報が通った後の別エラーでは「正しくありません」を出さない", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(401, {}))
+      .mockResolvedValueOnce(jsonResponse(401, {}))
+      .mockResolvedValueOnce(jsonResponse(503, {}));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<Converter />);
+    const user = await typeAndSubmit("@youtube");
+    await user.type(await screen.findByLabelText("ユーザー名"), "op");
+    await user.type(screen.getByLabelText("パスワード"), "wrong");
+    await user.click(screen.getByRole("button", { name: "変換する" }));
+    expect(await screen.findByText(/正しくありません/)).toBeInTheDocument();
+
+    await user.clear(screen.getByLabelText("パスワード"));
+    await user.type(screen.getByLabelText("パスワード"), "right");
+    await user.click(screen.getByRole("button", { name: "変換する" }));
+
+    expect(await screen.findByText(/メンテナンス中/)).toBeInTheDocument();
+    expect(screen.queryByText(/正しくありません/)).not.toBeInTheDocument();
+  });
+
   it("backend が返す上限(400 の max)に表示を追従させる", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(400, { max: 1 })));
 

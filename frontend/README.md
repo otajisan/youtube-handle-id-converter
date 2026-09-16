@@ -33,6 +33,10 @@ npm run dev                  # http://localhost:3000/youtube-handle-id-converter
 
 macOS で `npm install` すると Linux 向けの optional 依存(`@emnapi/*` 等)が `package-lock.json` から落ち、CI(Linux)の `npm ci` が失敗する([npm/cli#4828](https://github.com/npm/cli/issues/4828))。依存を追加・更新したら **`npm run lock:linux`** で lockfile を作り直してからコミットする。Dependabot の PR は Linux で生成されるため影響しない。
 
+### ESLint の構成について
+
+`eslint-config-next` は依存する `eslint-plugin-react` が ESLint 10 未対応(2026-09 時点、[jsx-eslint/eslint-plugin-react#3977](https://github.com/jsx-eslint/eslint-plugin-react/issues/3977))のため使わず、同等の構成を `eslint.config.mjs` で直接組んでいる(#46)。`eslint-plugin-react` の対応版が出たら `eslint-config-next` に戻してよい。
+
 ## CI / デプロイ
 
 [`.github/workflows/frontend-ci.yml`](../.github/workflows/frontend-ci.yml) が PR と `main` への push で実行される。
