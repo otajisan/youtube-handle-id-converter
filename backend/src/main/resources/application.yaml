@@ -34,6 +34,13 @@ app:
   max-inputs: ${APP_MAX_INPUTS:10}
   # カンマ区切り。ローカル開発では Next.js の dev サーバーを許可する
   cors-allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  # 保護機構(運用者が環境変数で切り替える。docs/operations.md 参照)
+  maintenance-mode: ${APP_MAINTENANCE_MODE:false}
+  auth:
+    enabled: ${APP_AUTH_ENABLED:false}
+    username: ${APP_AUTH_USERNAME:}
+    password: ${APP_AUTH_PASSWORD:}
+  rate-limit-per-minute: ${APP_RATE_LIMIT_PER_MINUTE:30}
 
 springdoc:
   # OpenAPI 定義のみ公開(Swagger UI は同梱しない)

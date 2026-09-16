@@ -31,6 +31,10 @@ cd frontend && npm ci && npm run dev   # http://localhost:3000/youtube-handle-id
 
 JDK 25 は Gradle toolchain が自動取得するため事前インストールは不要(Gradle 自体の起動には JDK 17 以上が必要)。詳細は [`backend/README.md`](backend/README.md)。
 
+## 運用
+
+Quota 枯渇時の緊急停止・Basic 認証・レートリミットの切り替え手順は [`docs/operations.md`](docs/operations.md)。
+
 ## 開発状況
 
 開発計画は [Epic #1](https://github.com/otajisan/youtube-handle-id-converter/issues/1) を参照。

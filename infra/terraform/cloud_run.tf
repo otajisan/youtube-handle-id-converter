@@ -62,6 +62,10 @@ resource "google_cloud_run_v2_service" "backend" {
         name  = "APP_AUTH_ENABLED"
         value = tostring(var.auth_enabled)
       }
+      env {
+        name  = "APP_RATE_LIMIT_PER_MINUTE"
+        value = tostring(var.rate_limit_per_minute)
+      }
 
       dynamic "env" {
         for_each = google_secret_manager_secret.this

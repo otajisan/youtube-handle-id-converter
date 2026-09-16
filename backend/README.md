@@ -86,6 +86,16 @@ OpenAPI 定義: `GET /v3/api-docs`(Cloud Run では公開 URL 配下)
 
 CORS は `APP_CORS_ALLOWED_ORIGINS`(カンマ区切り)のオリジンからのみ `/api/**` を許可する。
 
+## 保護機構
+
+[`protection/`](src/main/kotlin/io/github/otajisan/youtubehandleidconverter/protection/) パッケージ。運用手順は [`docs/operations.md`](../docs/operations.md)。
+
+| 機構 | 実装 | 応答 |
+|---|---|---|
+| メンテナンスモード | 最優先の Filter(認証より前に効く) | 503 ProblemDetail + `Retry-After` |
+| Basic 認証 | Spring Security(`/api/**` のみ。preflight と `/v3/api-docs` は公開、CSRF / セッションなし) | 401 ProblemDetail + `WWW-Authenticate` |
+| レートリミット | Bucket4j + Caffeine、`X-Forwarded-For` 先頭の IP 単位、インスタンス内メモリ | 429 ProblemDetail + `Retry-After` |
+
 ## YouTube Data API クライアント
 
 [`youtube/`](src/main/kotlin/io/github/otajisan/youtubehandleidconverter/youtube/) パッケージ。`channels.list` の薄いラッパー。
@@ -110,6 +120,9 @@ CORS は `APP_CORS_ALLOWED_ORIGINS`(カンマ区切り)のオリジンからの�
 | `SPRING_PROFILES_ACTIVE=gcp` | Cloud Logging 形式の JSON ログを標準出力に出す |
 | `APP_MAX_INPUTS` | 1 リクエストの入力件数上限(既定 10、1〜50) |
 | `APP_CORS_ALLOWED_ORIGINS` | CORS 許可オリジン(カンマ区切り。既定 `http://localhost:3000`) |
+| `APP_MAINTENANCE_MODE` | `true` で `/api/**` が 503(既定 `false`) |
+| `APP_AUTH_ENABLED` / `APP_AUTH_USERNAME` / `APP_AUTH_PASSWORD` | Basic 認証(既定無効。有効化時は資格情報必須) |
+| `APP_RATE_LIMIT_PER_MINUTE` | IP ごとの 1 分あたり上限(既定 30、0 で無効) |
 
 ### ポート分離(セキュリティ)
 

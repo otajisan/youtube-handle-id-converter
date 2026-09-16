@@ -52,3 +52,9 @@ variable "auth_enabled" {
   type        = bool
   default     = false
 }
+
+variable "rate_limit_per_minute" {
+  description = "IP ごとの 1 分あたりリクエスト上限(インスタンス単位)。0 で無効"
+  type        = number
+  default     = 30
+}
