@@ -5,6 +5,7 @@ import io.github.otajisan.youtubehandleidconverter.config.AppConfiguration
 import io.github.otajisan.youtubehandleidconverter.config.CorsConfiguration
 import io.github.otajisan.youtubehandleidconverter.conversion.ConversionResult
 import io.github.otajisan.youtubehandleidconverter.conversion.ConversionService
+import io.github.otajisan.youtubehandleidconverter.protection.SecurityConfiguration
 import io.github.otajisan.youtubehandleidconverter.youtube.YouTubeApiException
 import io.mockk.every
 import org.junit.jupiter.api.Test
@@ -19,7 +20,7 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester
     ConvertController::class,
     properties = ["app.max-inputs=3", "app.cors-allowed-origins=https://otajisan.github.io"],
 )
-@Import(AppConfiguration::class, CorsConfiguration::class)
+@Import(AppConfiguration::class, CorsConfiguration::class, SecurityConfiguration::class)
 class ConvertControllerTest {
     @Autowired
     private lateinit var mvc: MockMvcTester
