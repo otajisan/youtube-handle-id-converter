@@ -2,6 +2,10 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@12.4.2",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -11,8 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "preview": "rm -rf .preview && mkdir .preview && ln -s ../out .preview/youtube-handle-id-converter && npx --yes serve@latest .preview",
-    "lock:linux": "docker run --rm -v \"$PWD\":/app -w /app node:24 npm install --package-lock-only --no-audit --no-fund"
+    "preview": "rm -rf .preview && mkdir .preview && ln -s ../out .preview/youtube-handle-id-converter && pnpm dlx serve@latest .preview"
   },
   "dependencies": {
     "next": "16.3.5",
@@ -40,8 +43,5 @@
     "typescript-eslint": "^8.70.0",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^5.0.1"
-  },
-  "engines": {
-    "node": ">=24"
   }
 }

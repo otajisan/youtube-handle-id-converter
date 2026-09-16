@@ -70,7 +70,7 @@ graph LR
 ### 必要なもの
 
 - Docker(compose v2)
-- Node.js 24(frontend)
+- Node.js 24 と pnpm 12(frontend。`package.json` の `packageManager` でバージョン固定)
 - JDK 17 以上(Gradle の起動用。コンパイル・実行用の JDK 25 は Gradle toolchain が自動取得)
 - YouTube Data API v3 の API Key([Cloud Console](https://console.cloud.google.com/apis/credentials) で発行。API の制限を YouTube Data API v3 のみにする)
 
@@ -85,9 +85,9 @@ docker compose up --build       # http://localhost:8180(Actuator の 8181 はホ
 
 # 3. frontend を起動する(別ターミナル)
 cd frontend
-npm ci
+pnpm install --frozen-lockfile  # pnpm は package.json の packageManager で固定(corepack 不要。未導入なら npm i -g pnpm)
 cp .env.example .env.local      # NEXT_PUBLIC_API_BASE_URL=http://localhost:8180(既定値のままでよい)
-npm run dev                     # http://localhost:3000/youtube-handle-id-converter/
+pnpm dev                        # http://localhost:3000/youtube-handle-id-converter/
 ```
 
 backend の既定の CORS 許可オリジンは `http://localhost:3000` なので、そのままブラウザから変換できる。
@@ -122,7 +122,7 @@ curl -s http://localhost:8180/v3/api-docs
 | [frontend](.github/workflows/frontend-ci.yml) | lint / typecheck / test / build、dependency-review | GitHub Pages にデプロイ → `build-sha` を検証 |
 | [infra](.github/workflows/infra-ci.yml) | fmt / validate / tflint / trivy、`terraform plan` を PR にコメント | `terraform apply`(Environment `production`) |
 
-Dependabot が依存関係(gradle / npm / docker / terraform / github-actions)を週次で更新する。
+Dependabot が依存関係(gradle / npm(pnpm-lock.yaml)/ docker / terraform / github-actions)を週次で更新する。
 
 ## 運用
 
