@@ -25,8 +25,9 @@ export function Converter({ maxInputs: initialMax = DEFAULT_MAX_INPUTS }: Conver
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<ConvertResult[] | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
-  const [credentials, setCredentials] = useState<Credentials | null>(null);
+  const [credentials, setCredentials] = useState<Credentials>({ username: "", password: "" });
   const [needsAuth, setNeedsAuth] = useState(false);
+  const [authFailed, setAuthFailed] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
   const inputs = useMemo(() => splitInputs(text), [text]);
@@ -39,13 +40,19 @@ export function Converter({ maxInputs: initialMax = DEFAULT_MAX_INPUTS }: Conver
     setError(null);
     setResults(null);
     try {
-      const response = await convert(inputs, credentials ?? undefined);
+      const hasCredentials = credentials.username !== "" || credentials.password !== "";
+      const response = await convert(inputs, hasCredentials ? credentials : undefined);
       setResults(response.results);
       setNeedsAuth(false);
+      setAuthFailed(false);
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError("unknown", null, null);
       setError(apiError);
-      if (apiError.kind === "unauthorized") setNeedsAuth(true);
+      if (apiError.kind === "unauthorized") {
+        // 資格情報を送って 401 なら「誤り」、初回なら入力欄を出す
+        setAuthFailed(credentials.username !== "" || credentials.password !== "");
+        setNeedsAuth(true);
+      }
       if (apiError.kind === "too_many_inputs" && apiError.problem?.max)
         setMaxInputs(apiError.problem.max);
     } finally {
