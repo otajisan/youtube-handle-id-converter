@@ -52,6 +52,9 @@ export function Converter({ maxInputs: initialMax = DEFAULT_MAX_INPUTS }: Conver
         // 資格情報を送って 401 なら「誤り」、初回なら入力欄を出す
         setAuthFailed(credentials.username !== "" || credentials.password !== "");
         setNeedsAuth(true);
+      } else {
+        // 認証は通った(または不要)ので「正しくありません」の表示は消す
+        setAuthFailed(false);
       }
       if (apiError.kind === "too_many_inputs" && apiError.problem?.max)
         setMaxInputs(apiError.problem.max);
