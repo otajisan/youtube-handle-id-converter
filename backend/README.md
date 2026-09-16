@@ -7,7 +7,7 @@ Kotlin + Spring Boot によるバックエンド。YouTube Data API v3 の呼び
 | 項目 | バージョン |
 |---|---|
 | JDK | 25(Gradle toolchain が自動取得するため事前インストール不要) |
-| Kotlin | 2.3.21 |
+| Kotlin | 2.4.20 |
 | Spring Boot | 4.1.1 |
 | Gradle | 9.7.1(wrapper) |
 | Lint | ktlint 1.8.0 |
