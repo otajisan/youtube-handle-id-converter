@@ -10,6 +10,8 @@ services:
     environment:
       PORT: 8180
       MANAGEMENT_PORT: 8181
+      # .env または shell の環境変数から渡す(未設定なら backend は起動時に失敗する)
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
     ports:
       # アプリケーションポートのみ公開。Actuator(8181)はホストに出さない
       - "8180:8180"
