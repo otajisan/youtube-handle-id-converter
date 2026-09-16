@@ -56,6 +56,36 @@ docker compose up --build     # http://localhost:8180(Actuator の 8181 はホ�
 - `compose.yaml` では `read_only` / `cap_drop: ALL` / `no-new-privileges` を有効化
 - Cloud Run は `HEALTHCHECK` を無視するため、probe は Terraform(#8)で `MANAGEMENT_PORT` を指定する
 
+## API
+
+OpenAPI 定義: `GET /v3/api-docs`(Cloud Run では公開 URL 配下)
+
+### `POST /api/v1/convert`
+
+```json
+{ "inputs": ["@youtube", "UC-9-kyTW8ZkZNDHQJ6FgpwQ", "https://www.youtube.com/@google"] }
+```
+
+- ハンドル / Channel ID / YouTube URL(`youtube.com/@handle`、`youtube.com/channel/UC...`)を混在可。上限は `APP_MAX_INPUTS`(既定 10)、超過は 400
+- 重複は 1 回だけ問い合わせる(ハンドルは大文字小文字を区別しない)
+- Quota 消費 = ハンドル件数 + (Channel ID があれば 1)。Channel ID は 1 回の `channels.list?id=` にまとめる
+
+レスポンス(200、入力順):
+
+```json
+{ "results": [ { "input": "@youtube", "status": "ok", "handle": "@youtube", "channelId": "UC-9-kyTW8ZkZNDHQJ6FgpwQ", "title": "YouTube", "thumbnailUrl": "https://...", "reason": null } ] }
+```
+
+| `status` | 意味 |
+|---|---|
+| `ok` | 変換成功 |
+| `not_found` | 該当チャンネルなし |
+| `invalid` | 解釈できない入力(`reason` に理由) |
+
+全体エラーは RFC 9457 `ProblemDetail`: 400(件数超過・不正 JSON)/ 429(Quota 枯渇。`resetAt` = 太平洋時間 0 時)/ 502(YouTube API 障害)。
+
+CORS は `APP_CORS_ALLOWED_ORIGINS`(カンマ区切り)のオリジンからのみ `/api/**` を許可する。
+
 ## YouTube Data API クライアント
 
 [`youtube/`](src/main/kotlin/io/github/otajisan/youtubehandleidconverter/youtube/) パッケージ。`channels.list` の薄いラッパー。
@@ -78,6 +108,8 @@ docker compose up --build     # http://localhost:8180(Actuator の 8181 はホ�
 | `PORT` | アプリケーションのリッスンポート(デフォルト 8180、Cloud Run が注入) |
 | `MANAGEMENT_PORT` | Actuator のリッスンポート(デフォルト 8181) |
 | `SPRING_PROFILES_ACTIVE=gcp` | Cloud Logging 形式の JSON ログを標準出力に出す |
+| `APP_MAX_INPUTS` | 1 リクエストの入力件数上限(既定 10、1〜50) |
+| `APP_CORS_ALLOWED_ORIGINS` | CORS 許可オリジン(カンマ区切り。既定 `http://localhost:3000`) |
 
 ### ポート分離(セキュリティ)
 
