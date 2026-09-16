@@ -61,9 +61,10 @@ resource "google_monitoring_alert_policy" "quota_usage_high" {
   }
 
   alert_strategy {
-    # 同じ状態が続く間は再通知しない(1 日 1 回まで)
-    notification_rate_limit {
-      period = "86400s"
+    # 同じ状態が続く間の再通知は 1 日 1 回まで(notification_rate_limit はログベース専用なので使わない)
+    notification_channel_strategy {
+      notification_channel_names = [google_monitoring_notification_channel.email.id]
+      renotify_interval          = "86400s"
     }
     auto_close = "172800s"
   }
@@ -76,10 +77,10 @@ resource "google_monitoring_alert_policy" "quota_exceeded" {
   severity     = "ERROR"
 
   conditions {
-    display_name = "quota/exceeded が true"
+    display_name = "quota/exceeded(defaultPerDayPerProject)が true"
 
     condition_threshold {
-      filter          = "metric.type = \"serviceruntime.googleapis.com/quota/exceeded\" AND ${local.quota_filter}"
+      filter          = "metric.type = \"serviceruntime.googleapis.com/quota/exceeded\" AND ${local.quota_filter} AND metric.labels.limit_name = \"defaultPerDayPerProject\""
       comparison      = "COMPARISON_GT"
       threshold_value = 0
       duration        = "0s"
@@ -106,8 +107,10 @@ resource "google_monitoring_alert_policy" "quota_exceeded" {
   }
 
   alert_strategy {
-    notification_rate_limit {
-      period = "86400s"
+    # 同じ状態が続く間の再通知は 1 日 1 回まで(notification_rate_limit はログベース専用なので使わない)
+    notification_channel_strategy {
+      notification_channel_names = [google_monitoring_notification_channel.email.id]
+      renotify_interval          = "86400s"
     }
     auto_close = "172800s"
   }
@@ -194,7 +197,7 @@ resource "google_monitoring_dashboard" "quota" {
                 plotType = "STACKED_BAR"
                 timeSeriesQuery = {
                   timeSeriesFilter = {
-                    filter = "metric.type = \"serviceruntime.googleapis.com/quota/exceeded\" AND ${local.quota_filter}"
+                    filter = "metric.type = \"serviceruntime.googleapis.com/quota/exceeded\" AND ${local.quota_filter} AND metric.labels.limit_name = \"defaultPerDayPerProject\""
                     aggregation = {
                       alignmentPeriod  = "300s"
                       perSeriesAligner = "ALIGN_COUNT_TRUE"

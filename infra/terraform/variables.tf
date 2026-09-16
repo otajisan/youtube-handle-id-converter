@@ -62,6 +62,12 @@ variable "rate_limit_per_minute" {
 variable "alert_email" {
   description = "Quota アラートの通知先メールアドレス。public リポジトリに置かないため CI では TF_VAR_alert_email(Repository variable ALERT_EMAIL)で渡す"
   type        = string
+  sensitive   = true # plan 出力(PR コメント)に載せない
+
+  validation {
+    condition     = can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.alert_email))
+    error_message = "alert_email はメールアドレス形式で指定する(ALERT_EMAIL の Repository variable が未設定の可能性)"
+  }
 }
 
 variable "quota_daily_limit" {
