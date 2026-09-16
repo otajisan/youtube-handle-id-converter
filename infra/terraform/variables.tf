@@ -58,3 +58,20 @@ variable "rate_limit_per_minute" {
   type        = number
   default     = 30
 }
+
+variable "alert_email" {
+  description = "Quota アラートの通知先メールアドレス。public リポジトリに置かないため CI では TF_VAR_alert_email(Repository variable ALERT_EMAIL)で渡す"
+  type        = string
+}
+
+variable "quota_daily_limit" {
+  description = "YouTube Data API の 1 日の割り当て(unit)。Google の既定は 10,000"
+  type        = number
+  default     = 10000
+}
+
+variable "quota_alert_ratio" {
+  description = "直近 24 時間の消費がこの割合を超えたらアラートする(0〜1)"
+  type        = number
+  default     = 0.8
+}

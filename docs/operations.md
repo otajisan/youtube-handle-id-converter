@@ -18,7 +18,10 @@ bot 等で YouTube Data API の Quota が急速に枯渇する事態に、運用
 
 ### 1. Quota 消費を確認する
 
-[Cloud Console → API とサービス → YouTube Data API v3 → 割り当て](https://console.cloud.google.com/apis/api/youtube.googleapis.com/quotas?project=yt-handle-id-converter)、または Cloud Logging で `/api/v1/convert` のリクエスト元を確認する。
+- **ダッシュボード**: Cloud Monitoring の「YouTube Data API Quota」(`terraform output quota_dashboard_url`)。直近 24 時間の消費 unit、1 時間ごとの消費(method 別)、日次上限、枯渇の有無
+- **アラート(メール)**: 直近 24 時間の消費が上限の 80%(8,000 unit)を超えると WARNING、割り当てを使い切ると ERROR が `ALERT_EMAIL`(Repository variable)宛に届く。同じ状態では 1 日 1 回まで再通知、解消後 2 日で自動クローズ。閾値は Terraform 変数 `quota_alert_ratio` / `quota_daily_limit`
+- **手動確認**: [Cloud Console → API とサービス → YouTube Data API v3 → 割り当て](https://console.cloud.google.com/apis/api/youtube.googleapis.com/quotas?project=yt-handle-id-converter)、または Cloud Logging で `/api/v1/convert` のリクエスト元を確認する
+- **注意**: Google の日次リセットは太平洋時間 0 時だが、Monitoring は「直近 24 時間」の窓で集計するため、リセット直後もしばらくは高い値が表示される
 
 ### 2. 即時対応(gcloud、数十秒で反映)
 

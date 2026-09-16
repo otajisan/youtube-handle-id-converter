@@ -25,6 +25,8 @@ permissions:
 env:
   TF_VERSION: "1.16.2"
   TF_DIR: infra/terraform
+  # public リポジトリに置かない値は Repository variable から TF_VAR_* で渡す
+  TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
 
 jobs:
   changes:

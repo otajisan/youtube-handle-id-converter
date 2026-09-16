@@ -29,7 +29,7 @@ BILLING_ACCOUNT=XXXXXX-XXXXXX-XXXXXX ./infra/bootstrap.sh
 - 何度実行しても同じ結果になる(既存リソースはスキップ)
 - **JSON キーは作成しない。** GitHub Actions は Workload Identity Federation で SA を借用する
 - Terraform の SA は **apply 用と plan 用を分ける**。PR 上の任意の HCL(例: `data "external"`)が管理権限で実行されないようにするため
-  - `terraform`(apply): owner / editor は付けず、管理するリソース種別のロールのみ — `serviceusage.serviceUsageAdmin` / `run.admin` / `artifactregistry.admin` / `secretmanager.admin` / `iam.serviceAccountAdmin` / `iam.serviceAccountUser` / `iam.workloadIdentityPoolAdmin` / `resourcemanager.projectIamAdmin`、state バケットへの `storage.objectAdmin`。WIF バインディングは `attribute.repo_ref = otajisan/youtube-handle-id-converter@refs/heads/main` に限定
+  - `terraform`(apply): owner / editor は付けず、管理するリソース種別のロールのみ — `serviceusage.serviceUsageAdmin` / `run.admin` / `artifactregistry.admin` / `secretmanager.admin` / `iam.serviceAccountAdmin` / `iam.serviceAccountUser` / `iam.workloadIdentityPoolAdmin` / `resourcemanager.projectIamAdmin` / `monitoring.editor`、state バケットへの `storage.objectAdmin`。WIF バインディングは `attribute.repo_ref = otajisan/youtube-handle-id-converter@refs/heads/main` に限定
   - `terraform-plan`(plan): `roles/viewer` と state バケットへの `storage.objectViewer` のみ。ロックを取れないため plan は `-lock=false` で実行する。WIF バインディングは `attribute.repository` 単位(provider の条件で `main` / PR に絞られる)
 - WIF provider の attribute condition は `otajisan/youtube-handle-id-converter` の `refs/heads/main` と `refs/pull/*` に限定
 
@@ -42,6 +42,7 @@ BILLING_ACCOUNT=XXXXXX-XXXXXX-XXXXXX ./infra/bootstrap.sh
 ```sh
 cd infra/terraform
 export GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)   # ローカルは gcloud のトークンで認証(ADC 不要)
+export TF_VAR_alert_email=<通知先メールアドレス>                         # リポジトリに置かない値
 terraform init
 terraform plan
 ```
@@ -68,11 +69,12 @@ terraform plan
 
 | ファイル | リソース |
 |---|---|
-| `apis.tf` | `run` / `artifactregistry` / `secretmanager` / `youtube`(Data API v3)API |
+| `apis.tf` | `run` / `artifactregistry` / `secretmanager` / `youtube`(Data API v3)/ `monitoring` API |
 | `artifact_registry.tf` | Docker リポジトリ `backend`(直近 10 バージョン保持、30 日超は削除) |
 | `secrets.tf` | Secret の器 `YOUTUBE_API_KEY` / `APP_AUTH_USERNAME` / `APP_AUTH_PASSWORD`。実行 SA にのみ `secretAccessor` |
 | `iam.tf` | 実行 SA `backend-runtime`、CD 用 SA `github-deploy`(AR writer + 実行 SA の `serviceAccountUser`、WIF は `main` のみ) |
 | `cloud_run.tf` | Cloud Run サービス `backend`(min 0 / max 2、512Mi、probe は 8181)、`allUsers` invoker、CD 用 SA の `run.developer` |
+| `monitoring.tf` | Quota ダッシュボード、メール通知チャネル、アラート(直近 24 時間の消費が上限の 80% 超 / 枯渇)。宛先は `TF_VAR_alert_email` |
 
 ### Secret の値の投入(Terraform 管理外)
 
@@ -137,3 +139,4 @@ Terraform の output から登録する(CD 用):
 | `GCP_ARTIFACT_REGISTRY` | `terraform output artifact_registry_repository` |
 | `CLOUD_RUN_SERVICE` | `backend`(`var.service_name`) |
 | `NEXT_PUBLIC_API_BASE_URL` | `terraform output backend_url`(frontend のビルド時に埋め込む) |
+| `ALERT_EMAIL` | Quota アラートの通知先。`TF_VAR_alert_email` として infra ワークフローに渡す(public リポジトリに置かないため) |
