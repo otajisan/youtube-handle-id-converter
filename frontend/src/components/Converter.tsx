@@ -110,8 +110,10 @@ export function Converter({ maxInputs: initialMax = DEFAULT_MAX_INPUTS }: Conver
 
       {needsAuth && (
         <div className={`${styles.alert} ${styles.alertInfo}`}>
-          <p>
-            このツールは現在、利用に認証が必要です。ユーザー名とパスワードを入力して再度変換してください。
+          <p role="alert">
+            {authFailed
+              ? "ユーザー名またはパスワードが正しくありません。確認して再度変換してください。"
+              : "このツールは現在、利用に認証が必要です。ユーザー名とパスワードを入力して再度変換してください。"}
           </p>
           <div className={styles.credentials}>
             <input
@@ -119,18 +121,16 @@ export function Converter({ maxInputs: initialMax = DEFAULT_MAX_INPUTS }: Conver
               aria-label="ユーザー名"
               placeholder="ユーザー名"
               autoComplete="username"
-              onChange={(e) =>
-                setCredentials((c) => ({ username: e.target.value, password: c?.password ?? "" }))
-              }
+              value={credentials.username}
+              onChange={(e) => setCredentials((c) => ({ ...c, username: e.target.value }))}
             />
             <input
               type="password"
               aria-label="パスワード"
               placeholder="パスワード"
               autoComplete="current-password"
-              onChange={(e) =>
-                setCredentials((c) => ({ username: c?.username ?? "", password: e.target.value }))
-              }
+              value={credentials.password}
+              onChange={(e) => setCredentials((c) => ({ ...c, password: e.target.value }))}
             />
           </div>
         </div>

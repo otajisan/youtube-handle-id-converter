@@ -130,6 +130,21 @@ describe("Converter", () => {
     expect(screen.queryByLabelText("ユーザー名")).not.toBeInTheDocument();
   });
 
+  it("誤った資格情報で再度 401 なら、その旨を表示する", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(401, {})));
+
+    render(<Converter />);
+    const user = await typeAndSubmit("@youtube");
+    expect(await screen.findByRole("alert")).toHaveTextContent("認証が必要です");
+
+    await user.type(screen.getByLabelText("ユーザー名"), "op");
+    await user.type(screen.getByLabelText("パスワード"), "wrong");
+    await user.click(screen.getByRole("button", { name: "変換する" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("正しくありません");
+    expect(screen.getByLabelText("ユーザー名")).toHaveValue("op");
+  });
+
   it("backend が返す上限(400 の max)に表示を追従させる", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(400, { max: 1 })));
 
