@@ -117,6 +117,8 @@ resource "google_monitoring_alert_policy" "quota_exceeded" {
 }
 
 # ---- ダッシュボード ---------------------------------------------------------------
+# API は 0 の xPos / yPos を省略し dataSets に targetAxis = "Y1" を補って返すため、
+# 永続差分を避けるために HCL も同じ形(0 は書かない、targetAxis を明示)にしている。
 resource "google_monitoring_dashboard" "quota" {
   dashboard_json = jsonencode({
     displayName = "YouTube Data API Quota"
@@ -124,7 +126,7 @@ resource "google_monitoring_dashboard" "quota" {
       columns = 12
       tiles = [
         {
-          xPos = 0, yPos = 0, width = 4, height = 4
+          width = 4, height = 4
           widget = {
             title = "直近 24 時間の消費 unit"
             scorecard = {
@@ -146,12 +148,13 @@ resource "google_monitoring_dashboard" "quota" {
           }
         },
         {
-          xPos = 4, yPos = 0, width = 8, height = 4
+          xPos = 4, width = 8, height = 4
           widget = {
             title = "1 時間ごとの消費 unit(method 別)"
             xyChart = {
               dataSets = [{
-                plotType = "STACKED_BAR"
+                plotType   = "STACKED_BAR"
+                targetAxis = "Y1"
                 timeSeriesQuery = {
                   timeSeriesFilter = {
                     filter = "metric.type = \"serviceruntime.googleapis.com/quota/rate/net_usage\" AND ${local.quota_filter}"
@@ -170,12 +173,13 @@ resource "google_monitoring_dashboard" "quota" {
           }
         },
         {
-          xPos = 0, yPos = 4, width = 6, height = 4
+          yPos = 4, width = 6, height = 4
           widget = {
             title = "1 日の割り当て上限(defaultPerDayPerProject)"
             xyChart = {
               dataSets = [{
-                plotType = "LINE"
+                plotType   = "LINE"
+                targetAxis = "Y1"
                 timeSeriesQuery = {
                   timeSeriesFilter = {
                     filter = "metric.type = \"serviceruntime.googleapis.com/quota/limit\" AND ${local.quota_filter} AND metric.labels.limit_name = \"defaultPerDayPerProject\""
@@ -195,7 +199,8 @@ resource "google_monitoring_dashboard" "quota" {
             title = "Quota 枯渇(exceeded)"
             xyChart = {
               dataSets = [{
-                plotType = "STACKED_BAR"
+                plotType   = "STACKED_BAR"
+                targetAxis = "Y1"
                 timeSeriesQuery = {
                   timeSeriesFilter = {
                     filter = "metric.type = \"serviceruntime.googleapis.com/quota/exceeded\" AND ${local.quota_filter} AND metric.labels.limit_name = \"defaultPerDayPerProject\""
