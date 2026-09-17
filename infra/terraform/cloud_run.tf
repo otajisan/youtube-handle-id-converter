@@ -16,6 +16,8 @@ resource "google_cloud_run_v2_service" "backend" {
 
   template {
     service_account = google_service_account.runtime.email
+    # 100 件のハンドルを並列(同時 20)で引いても十分に収まり、暴走時は早めに切る
+    timeout = "120s"
 
     scaling {
       min_instance_count = 0 # 待機コストをゼロにする(コールドスタートは許容)

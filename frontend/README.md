@@ -57,7 +57,7 @@ pnpm dev                         # http://localhost:3000/youtube-handle-id-conve
 | `src/lib/inputKind.ts`         | 入力種別のプレビュー判定(backend の `InputParser` と同じ規則。最終判定は backend)                                                                                                                           |
 | `src/lib/tsv.ts`               | 結果の TSV 化                                                                                                                                                                                               |
 
-上限件数は既定 10 で、backend が 400(`max`)を返した場合はその値に追従する。
+上限件数は既定 100 で、backend が 400(`max`)を返した場合はその値に追従する。
 
 ## 静的エクスポートの制約
 

@@ -68,7 +68,7 @@ OpenAPI 定義: `GET /v3/api-docs`(Cloud Run では公開 URL 配下)
 
 - ハンドル / Channel ID / YouTube URL(`youtube.com/@handle`、`youtube.com/channel/UC...`)を混在可。上限は `APP_MAX_INPUTS`(既定 100)、超過は 400
 - 重複は 1 回だけ問い合わせる(ハンドルは大文字小文字を区別しない)
-- Quota 消費 = ハンドル件数 + ⌈Channel ID 件数 / 50⌉。Channel ID は 50 件ずつ `channels.list?id=` にまとめる(100 件なら最大 2 unit)
+- Quota 消費 = ハンドル件数 + ⌈Channel ID 件数 / 50⌉。Channel ID は 50 件ずつ `channels.list?id=` にまとめる(100 件なら最大 2 unit)。ハンドルは仮想スレッドで並列(同時 20 件)に引く
 
 レスポンス(200、入力順):
 
