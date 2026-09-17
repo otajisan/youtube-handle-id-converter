@@ -110,6 +110,8 @@ Cloud Run は `latest` バージョンを参照するため、サービス作成
 
 Terraform は `image` を `ignore_changes` にしているため、CD 後も `terraform plan` は空差分になる。
 
+backend と infra の両方を変更する PR をマージすると CD(image 更新)と `infra-apply`(env 等の更新)が同時に走るため、両ジョブはジョブ単位の `concurrency: cloud-run-backend` で直列化している(同時更新すると片方が `startup probe` 失敗として報告されることがある。#47 の記録参照)。
+
 ### 初期イメージ(1 回限りのシード)
 
 Cloud Run サービスの作成にはイメージが必要なため、初回のみ手動で push した(`backend:initial`)。以後は CD(#9)が SHA タグで push し image を更新する。Terraform は `image` を `ignore_changes` にしている。
