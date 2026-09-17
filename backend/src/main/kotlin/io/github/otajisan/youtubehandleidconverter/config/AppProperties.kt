@@ -13,7 +13,7 @@ import org.springframework.validation.annotation.Validated
 @ConfigurationProperties(prefix = "app")
 data class AppProperties(
     /** 1 リクエストで受け付ける入力件数の上限。Quota 利用状況を見て調整する */
-    @field:Min(1) @field:Max(50) val maxInputs: Int = 10,
+    @field:Min(1) @field:Max(200) val maxInputs: Int = 100,
     /** CORS で許可するオリジン(GitHub Pages)。空なら CORS を許可しない */
     val corsAllowedOrigins: List<String> = emptyList(),
     /** true なら /api 配下が 503 を返す(Quota 枯渇時などの緊急停止) */

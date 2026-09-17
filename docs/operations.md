@@ -9,7 +9,7 @@ bot 等で YouTube Data API の Quota が急速に枯渇する事態に、運用
 | `APP_MAINTENANCE_MODE` | `maintenance_mode` | `false` | `true` で `/api/**` が 503(`Retry-After: 3600`)。Actuator(management ポート)は影響なし |
 | `APP_AUTH_ENABLED` | `auth_enabled` | `false` | `true` で `/api/**` に Basic 認証を要求。資格情報は Secret `APP_AUTH_USERNAME` / `APP_AUTH_PASSWORD` |
 | `APP_RATE_LIMIT_PER_MINUTE` | `rate_limit_per_minute` | `30` | IP ごとの 1 分あたり上限(Cloud Run インスタンス単位)。超過は 429。`0` で無効 |
-| `APP_MAX_INPUTS` | `max_inputs` | `10` | 1 リクエストの入力件数上限 |
+| `APP_MAX_INPUTS` | `max_inputs` | `100` | 1 リクエストの入力件数上限(backend の上限は 200) |
 | `APP_CORS_ALLOWED_ORIGINS` | `cors_allowed_origins` | GitHub Pages | 許可オリジン(カンマ区切り) |
 
 いずれも新しいリビジョンのデプロイで反映される(Cloud Run の環境変数はリビジョン単位)。

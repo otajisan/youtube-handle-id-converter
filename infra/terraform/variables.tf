@@ -36,9 +36,9 @@ variable "cors_allowed_origins" {
 }
 
 variable "max_inputs" {
-  description = "1 リクエストで受け付ける変換件数の上限(Quota を見て調整する)"
+  description = "1 リクエストで受け付ける変換件数の上限(Quota を見て調整する。#47 で 10 → 100)"
   type        = number
-  default     = 10
+  default     = 100
 }
 
 variable "maintenance_mode" {

@@ -8,7 +8,7 @@
 
 ## 使い方
 
-1. テキストエリアに **1 行 1 件** で入力する(最大 10 件、混在可)
+1. テキストエリアに **1 行 1 件** で入力する(最大 100 件、混在可)
    - ハンドル: `@youtube`(先頭の `@` は省略可)
    - Channel ID: `UCBR8-60-B28hp2BmDPdntcQ`
    - YouTube URL: `https://www.youtube.com/@youtube`、`youtube.com/channel/UC...`
@@ -21,13 +21,13 @@
 | 見つかりません | 該当するチャンネルが存在しない |
 | 不正な入力 | 上記の形式として解釈できない(理由が併記される) |
 
-### 10 件制限と Quota
+### 件数制限と Quota
 
 このツールは YouTube Data API v3 を **1 つの API Key で全員が共有**して利用しており、1 日の割り当て(Quota)は既定の 10,000 unit です。
 
-- 1 リクエストの消費 = **ハンドルの件数 + (Channel ID があれば 1)** unit。Channel ID は 1 回の API 呼び出しにまとめて引くため、10 件すべて Channel ID なら 1 unit、すべてハンドルなら 10 unit
+- 1 リクエストの消費 = **ハンドルの件数 + ⌈Channel ID の件数 ÷ 50⌉** unit。Channel ID は 50 件ずつまとめて引くため、100 件すべて Channel ID なら 2 unit、すべてハンドルなら 100 unit
 - 不正な入力と重複は API を呼ばない
-- 1 リクエストの上限は 10 件(運用者が `APP_MAX_INPUTS` で変更可能)
+- 1 リクエストの上限は 100 件(運用者が `APP_MAX_INPUTS` で変更可能。当初 10 件で運用し、Quota 実績を見て引き上げた)
 
 ### 割り当てを使い切ったとき
 
