@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotEmpty
 data class ConvertRequest(
     @field:NotEmpty
     @field:Schema(
-        description = "ハンドル(@handle)/ Channel ID(UC...)/ YouTube URL を混在可。件数の上限は APP_MAX_INPUTS(既定 10)",
+        description = "ハンドル(@handle)/ Channel ID(UC...)/ YouTube URL を混在可。件数の上限は APP_MAX_INPUTS(既定 100)",
         example = "[\"@youtube\", \"UC-9-kyTW8ZkZNDHQJ6FgpwQ\", \"https://www.youtube.com/@google\"]",
     )
     val inputs: List<String>,

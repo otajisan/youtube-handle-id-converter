@@ -9,6 +9,8 @@ import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.system.measureTimeMillis
 
 class ConversionServiceTest {
     private val client = mockk<YouTubeDataApiClient>()
@@ -107,6 +109,37 @@ class ConversionServiceTest {
         assertThat(results.map { it.status }).containsOnly(ConversionResult.Status.INVALID)
         verify(exactly = 0) { client.byIds(any()) }
         verify(exactly = 0) { client.byHandle(any()) }
+    }
+
+    @Test
+    fun `多数のハンドルは並列に引く(100 件 × 100ms が数秒で終わる)`() {
+        val inFlight = AtomicInteger()
+        val maxInFlight = AtomicInteger()
+        every { client.byHandle(any()) } answers {
+            val now = inFlight.incrementAndGet()
+            maxInFlight.updateAndGet { maxOf(it, now) }
+            Thread.sleep(100)
+            inFlight.decrementAndGet()
+            YouTubeChannel("UC${firstArg<String>().padEnd(22, 'x').take(22)}", "@${firstArg<String>()}", "t", null)
+        }
+        val inputs = List(100) { "@handle$it" }
+
+        val elapsed = measureTimeMillis { assertThat(service.convert(inputs)).hasSize(100) }
+
+        // 逐次なら 10 秒以上。並列(同時 20)なら 0.5 秒程度
+        assertThat(elapsed).isLessThan(3_000)
+        assertThat(maxInFlight.get()).isBetween(2, ConversionService.HANDLE_CONCURRENCY)
+        verify(exactly = 100) { client.byHandle(any()) }
+    }
+
+    @Test
+    fun `並列に引いた一部のハンドルで上流障害が起きても全体を失敗させる`() {
+        every { client.byHandle("alpha") } returns a
+        every { client.byHandle("boom") } throws YouTubeApiException.Upstream("boom")
+
+        assertThatThrownBy { service.convert(listOf("@alpha", "@boom")) }
+            .isInstanceOf(YouTubeApiException.Upstream::class.java)
+            .hasMessage("boom")
     }
 
     @Test

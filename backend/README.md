@@ -66,9 +66,9 @@ OpenAPI 定義: `GET /v3/api-docs`(Cloud Run では公開 URL 配下)
 { "inputs": ["@youtube", "UC-9-kyTW8ZkZNDHQJ6FgpwQ", "https://www.youtube.com/@google"] }
 ```
 
-- ハンドル / Channel ID / YouTube URL(`youtube.com/@handle`、`youtube.com/channel/UC...`)を混在可。上限は `APP_MAX_INPUTS`(既定 10)、超過は 400
+- ハンドル / Channel ID / YouTube URL(`youtube.com/@handle`、`youtube.com/channel/UC...`)を混在可。上限は `APP_MAX_INPUTS`(既定 100)、超過は 400
 - 重複は 1 回だけ問い合わせる(ハンドルは大文字小文字を区別しない)
-- Quota 消費 = ハンドル件数 + (Channel ID があれば 1)。Channel ID は 1 回の `channels.list?id=` にまとめる
+- Quota 消費 = ハンドル件数 + ⌈Channel ID 件数 / 50⌉。Channel ID は 50 件ずつ `channels.list?id=` にまとめる(100 件なら最大 2 unit)。ハンドルは仮想スレッドで並列(同時 20 件)に引く
 
 レスポンス(200、入力順):
 
@@ -118,7 +118,7 @@ CORS は `APP_CORS_ALLOWED_ORIGINS`(カンマ区切り)のオリジンからの�
 | `PORT` | アプリケーションのリッスンポート(デフォルト 8180、Cloud Run が注入) |
 | `MANAGEMENT_PORT` | Actuator のリッスンポート(デフォルト 8181) |
 | `SPRING_PROFILES_ACTIVE=gcp` | Cloud Logging 形式の JSON ログを標準出力に出す |
-| `APP_MAX_INPUTS` | 1 リクエストの入力件数上限(既定 10、1〜50) |
+| `APP_MAX_INPUTS` | 1 リクエストの入力件数上限(既定 100、1〜200) |
 | `APP_CORS_ALLOWED_ORIGINS` | CORS 許可オリジン(カンマ区切り。既定 `http://localhost:3000`) |
 | `APP_MAINTENANCE_MODE` | `true` で `/api/**` が 503(既定 `false`) |
 | `APP_AUTH_ENABLED` / `APP_AUTH_USERNAME` / `APP_AUTH_PASSWORD` | Basic 認証(既定無効。有効化時は資格情報必須) |

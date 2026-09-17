@@ -7,7 +7,7 @@ import { INPUT_KIND_LABEL, classifyInput, splitInputs } from "@/lib/inputKind";
 import { toTsv, toTsvRow } from "@/lib/tsv";
 import styles from "./Converter.module.css";
 
-export const DEFAULT_MAX_INPUTS = 10;
+export const DEFAULT_MAX_INPUTS = 100;
 
 const STATUS_LABEL: Record<ConvertResult["status"], string> = {
   ok: "変換済み",
