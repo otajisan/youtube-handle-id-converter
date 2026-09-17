@@ -4,7 +4,8 @@ resource "google_project_service" "this" {
     "run.googleapis.com",
     "artifactregistry.googleapis.com",
     "secretmanager.googleapis.com",
-    "youtube.googleapis.com", # YouTube Data API v3(API Key はこのプロジェクトで発行する)
+    "youtube.googleapis.com",    # YouTube Data API v3(API Key はこのプロジェクトで発行する)
+    "monitoring.googleapis.com", # Quota の可視化・アラート
   ])
 
   service            = each.value
