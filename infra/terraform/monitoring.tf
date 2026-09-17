@@ -164,7 +164,8 @@ resource "google_monitoring_dashboard" "quota" {
                   }
                 }
               }]
-              thresholds = [{ value = local.quota_alert_threshold, color = "YELLOW", direction = "ABOVE", label = "アラート閾値(24h)" }]
+              # xyChart の threshold に指定できるのは value / label のみ(color / direction は不可)
+              thresholds = [{ value = local.quota_alert_threshold, label = "アラート閾値(24h)" }]
             }
           }
         },
