@@ -40,10 +40,8 @@ updates:
       dev-dependencies:
         dependency-type: "development"
         exclude-patterns: ["@types/react", "@types/react-dom"]
-    ignore:
-      # typescript-eslint が TS 7 未対応の間は major 更新を止める(対応後に外す)
-      - dependency-name: "typescript"
-        update-types: ["version-update:semver-major"]
+    # typescript は @typescript/typescript6(API 用、6.x のみ)、@typescript/native は typescript 7.x(tsc 用)の
+    # エイリアス。TS 7 の major 更新はエイリアス側で追跡されるため、ignore は不要(#49)
 
   - package-ecosystem: "terraform"
     directory: "/infra/terraform"
