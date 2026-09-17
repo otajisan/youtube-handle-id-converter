@@ -32,6 +32,17 @@ pnpm dev                         # http://localhost:3000/youtube-handle-id-conve
 
 `pnpm add` / `pnpm update` 後は `pnpm-lock.yaml` をそのままコミットする。pnpm の lockfile は optional 依存を全プラットフォーム分記録するため、npm で必要だった「Linux で lockfile を再生成する」回避策(npm/cli#4828)は不要。CI は `pnpm install --frozen-lockfile` で lockfile と `package.json` の不整合を検出する。
 
+### TypeScript 7 と 6 の併用について
+
+TypeScript 7.0(Go 実装)は JS API を提供しないため、`typescript-eslint` や Next.js の型検査は TS 6 の API を必要とする([公式の案内](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/))。そのため npm エイリアスで両方を入れている(#49):
+
+| package.json のキー  | 実体                           | 用途                                                                                       |
+| -------------------- | ------------------------------ | ------------------------------------------------------------------------------------------ |
+| `typescript`         | `@typescript/typescript6`(6.x) | `import "typescript"` する API 利用者(typescript-eslint、Next.js、エディタ)。CLI は `tsc6` |
+| `@typescript/native` | `typescript`(7.x)              | `tsc`(ネイティブ)。`pnpm typecheck` はこちらを使う                                         |
+
+TS 7.1 で API が提供され typescript-eslint が対応したら、エイリアスをやめて `typescript@7` 単体に戻す。
+
 ### ESLint の構成について
 
 `eslint-config-next` は依存する `eslint-plugin-react` が ESLint 10 未対応(2026-09 時点、[jsx-eslint/eslint-plugin-react#3977](https://github.com/jsx-eslint/eslint-plugin-react/issues/3977))のため使わず、同等の構成を `eslint.config.mjs` で直接組んでいる(#46)。`eslint-plugin-react` の対応版が出たら `eslint-config-next` に戻してよい。
