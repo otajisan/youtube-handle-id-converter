@@ -176,6 +176,11 @@ jobs:
     if: github.event_name == 'push' && needs.changes.outputs.infra == 'true'
     runs-on: ubuntu-latest
     # デプロイ可能ブランチを main に限定した Environment。apply 用 SA も main のトークンしか受け付けない
+    # CD(image 更新)と Terraform apply(env 等の更新)が同じ Cloud Run サービスを同時に更新しないよう、
+    # ワークフローをまたいで直列化する(#58 のマージ時に競合して apply が失敗した)
+    concurrency:
+      group: cloud-run-backend
+      cancel-in-progress: false
     environment: production
     permissions:
       contents: read
