@@ -22,3 +22,8 @@ output "backend_url" {
   description = "Cloud Run サービスの URL。フロントの NEXT_PUBLIC_API_BASE_URL に設定する"
   value       = google_cloud_run_v2_service.backend.uri
 }
+
+output "quota_dashboard_url" {
+  description = "Quota ダッシュボードの URL"
+  value       = "https://console.cloud.google.com/monitoring/dashboards/builder/${element(split("/", google_monitoring_dashboard.quota.id), length(split("/", google_monitoring_dashboard.quota.id)) - 1)}?project=${var.project_id}"
+}

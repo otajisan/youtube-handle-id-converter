@@ -84,7 +84,8 @@ for role in \
   roles/iam.serviceAccountAdmin \
   roles/iam.serviceAccountUser \
   roles/iam.workloadIdentityPoolAdmin \
-  roles/resourcemanager.projectIamAdmin
+  roles/resourcemanager.projectIamAdmin \
+  roles/monitoring.editor
 do
   gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
     --member="serviceAccount:${TF_SA}" --role="${role}" --condition=None >/dev/null
