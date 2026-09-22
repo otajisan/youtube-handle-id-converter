@@ -8,7 +8,7 @@
 # ベースイメージはダイジェストで固定し、Dependabot(docker)が更新する。
 
 # ---- 1. build --------------------------------------------------------------
-FROM eclipse-temurin:25-jdk-alpine@sha256:09349d79941fd53bb3d487b393ca118d8853c08c09193f416fe6a8718df9e732 AS build
+FROM eclipse-temurin:25-jdk-alpine@sha256:541729c21f9308a68cebbe5a0627e4cd465dfe8980fc03bac0b2feaee57daafd AS build
 WORKDIR /workspace
 
 # 依存解決をソース変更から切り離してキャッシュを効かせる
@@ -22,13 +22,13 @@ RUN --mount=type=cache,target=/root/.gradle \
     ./gradlew --no-daemon bootJar -x test --quiet
 
 # ---- 2. extract ------------------------------------------------------------
-FROM eclipse-temurin:25-jdk-alpine@sha256:09349d79941fd53bb3d487b393ca118d8853c08c09193f416fe6a8718df9e732 AS extract
+FROM eclipse-temurin:25-jdk-alpine@sha256:541729c21f9308a68cebbe5a0627e4cd465dfe8980fc03bac0b2feaee57daafd AS extract
 WORKDIR /workspace
 COPY --from=build /workspace/build/libs/app.jar app.jar
 RUN java -Djarmode=tools -jar app.jar extract --layers --launcher --destination extracted
 
 # ---- 3. runtime ------------------------------------------------------------
-FROM eclipse-temurin:25-jre-alpine@sha256:3137541deb3cac6626b5d9a4a2187bc0d6a34312f858bd2c67dd01e732e6b682 AS runtime
+FROM eclipse-temurin:25-jre-alpine@sha256:2ca9adf44f5c29d28ecd26cf92d75cc0c66b7f32bfd839a4439e363a8b428af8 AS runtime
 
 # 非 root ユーザー(固定 UID/GID で再現性を確保)
 RUN addgroup -S -g 10001 app && adduser -S -u 10001 -G app -h /app app
