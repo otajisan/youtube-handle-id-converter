@@ -1,9 +1,9 @@
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
-    kotlin("jvm") version "2.4.20"
-    kotlin("plugin.spring") version "2.4.20"
-    id("org.springframework.boot") version "4.1.1"
+    kotlin("jvm") version "2.4.21"
+    kotlin("plugin.spring") version "2.4.21"
+    id("org.springframework.boot") version "4.1.2"
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
     jacoco
 }
@@ -30,13 +30,16 @@ repositories {
 
 dependencies {
     implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+    // springdoc 経由の swagger-core が jackson-bom 2.22.1 を要求し、Boot の BOM(2.21.x)より優先される。
+    // 2.22.1 には high な脆弱性(GHSA-p6pp-m3f8-5c89 / GHSA-7hhh-6rmp-j9qf ほか)があるため修正版に固定する
+    implementation(platform("com.fasterxml.jackson:jackson-bom:2.22.4"))
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-restclient")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-api:3.1.1")
-    implementation("com.bucket4j:bucket4j_jdk17-core:8.19.0")
+    implementation("com.bucket4j:bucket4j_jdk17-core:8.21.0")
     implementation("com.github.ben-manes.caffeine:caffeine")
     implementation("tools.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -48,17 +51,6 @@ dependencies {
     testImplementation("io.mockk:mockk:1.14.11")
     testImplementation("com.ninja-squad:springmockk:5.0.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-
-    constraints {
-        // Spring Boot 4.1.1 の BOM が管理する Tomcat 11.0.24 には critical な CVE がある
-        // (CVE-2026-65182 / CVE-2026-65905 / CVE-2026-68525、11.0.25 で修正)。
-        // BOM が 11.0.25 以上を管理するようになったらこの制約は削除する
-        listOf("tomcat-embed-core", "tomcat-embed-el", "tomcat-embed-websocket").forEach {
-            implementation("org.apache.tomcat.embed:$it:11.0.25") {
-                because("CVE-2026-65182 / CVE-2026-65905 / CVE-2026-68525")
-            }
-        }
-    }
 }
 
 ktlint {
