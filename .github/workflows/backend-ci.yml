@@ -96,7 +96,10 @@ jobs:
   dependency-review:
     name: backend-dependency-review
     needs: changes
-    if: needs.changes.outputs.backend == 'true' && needs.changes.outputs.writable == 'true'
+    # main への push では backend に変更が無くても送信する。dependency-review は PR の base SHA の
+    # スナップショットと比較するため、base が backend 以外の変更のコミットだとスナップショットが 0 件になり、
+    # 既存の依存がすべて「追加」扱いになって既知の脆弱性で PR が落ちる
+    if: needs.changes.outputs.writable == 'true' && (github.event_name == 'push' || needs.changes.outputs.backend == 'true')
     runs-on: ubuntu-latest
     permissions:
       contents: write # 依存グラフの送信(Dependency submission API)
