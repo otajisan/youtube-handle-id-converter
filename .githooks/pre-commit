@@ -1,0 +1,21 @@
+#!/bin/sh
+# このリポジトリのコミットは必ず otajisan 名義にする
+EXPECTED_NAME="otajisan"
+EXPECTED_EMAIL="taji.taji.otajisan@gmail.com"
+EXPECTED_IDENT="$EXPECTED_NAME <$EXPECTED_EMAIL>"
+
+fail() {
+  echo "pre-commit: $1" >&2
+  echo "pre-commit: このリポジトリでは $EXPECTED_IDENT 以外でコミットできません。" >&2
+  echo "pre-commit: git config user.name \"$EXPECTED_NAME\" && git config user.email \"$EXPECTED_EMAIL\" を実行してください。" >&2
+  exit 1
+}
+
+[ "$(git config user.name)" = "$EXPECTED_NAME" ] || fail "user.name が $(git config user.name) になっています。"
+[ "$(git config user.email)" = "$EXPECTED_EMAIL" ] || fail "user.email が $(git config user.email) になっています。"
+
+# GIT_AUTHOR_* / GIT_COMMITTER_* での上書きも検出する（末尾のタイムスタンプは除く）
+for var in GIT_AUTHOR_IDENT GIT_COMMITTER_IDENT; do
+  ident=$(git var "$var" | sed 's/ [0-9]* [-+][0-9]*$//')
+  [ "$ident" = "$EXPECTED_IDENT" ] || fail "$var が $ident になっています。"
+done
