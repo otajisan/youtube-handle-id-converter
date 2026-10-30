@@ -1,0 +1,52 @@
+#!/bin/sh
+# このリポジトリへの push は必ず otajisan の認証・otajisan 名義のコミットだけにする
+EXPECTED_IDENT="otajisan <taji.taji.otajisan@gmail.com>"
+
+# 全桁が 0 の sha（ブランチの削除・新規作成）。SHA-1 / SHA-256 の両方に対応する
+is_zero() {
+  case "$1" in
+    *[!0]*) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+remote="$1"
+url="$2"
+case "$url" in
+  https://otajisan@github.com/otajisan/youtube-handle-id-converter|https://otajisan@github.com/otajisan/youtube-handle-id-converter.git) ;;
+  *)
+    echo "pre-push: push 先 URL が $url になっています。" >&2
+    echo "pre-push: git remote set-url origin https://otajisan@github.com/otajisan/youtube-handle-id-converter を実行してください。" >&2
+    exit 1
+    ;;
+esac
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  is_zero "$local_sha" && continue # ブランチ削除
+  if is_zero "$remote_sha"; then
+    range="$local_sha --not --remotes=$remote"
+  else
+    range="$remote_sha..$local_sha"
+  fi
+  # 検査できなかったときは push を止める（fetch していない force push など）
+  # shellcheck disable=SC2086
+  if ! log=$(git log --format='%h %an <%ae>|%cn <%ce>' $range); then
+    echo "pre-push: $local_ref のコミットを検査できませんでした。git fetch してからやり直してください。" >&2
+    exit 1
+  fi
+  bad=$(printf '%s\n' "$log" | while IFS='|' read -r author committer; do
+    [ -n "$author" ] || continue
+    hash=${author%% *}
+    author=${author#* }
+    if [ "$author" != "$EXPECTED_IDENT" ]; then
+      echo "$hash author: $author"
+    elif [ "$committer" != "$EXPECTED_IDENT" ] && [ "$committer" != "GitHub <noreply@github.com>" ]; then
+      echo "$hash committer: $committer"
+    fi
+  done)
+  if [ -n "$bad" ]; then
+    echo "pre-push: $local_ref に $EXPECTED_IDENT 以外のコミットがあります。" >&2
+    echo "$bad" >&2
+    exit 1
+  fi
+done
