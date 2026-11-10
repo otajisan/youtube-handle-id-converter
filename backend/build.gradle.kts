@@ -39,7 +39,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-api:3.2.0")
-    implementation("com.bucket4j:bucket4j_jdk17-core:8.21.0")
+    implementation("com.bucket4j:bucket4j_jdk17-core:8.22.0")
     implementation("com.github.ben-manes.caffeine:caffeine")
     implementation("tools.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
